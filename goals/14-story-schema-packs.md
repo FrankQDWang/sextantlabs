@@ -2,6 +2,8 @@
 
 > 本文档定义小说记忆系统如何通过 **Base Story Schema + Genre Pack + Project Overrides** 泛化到不同题材。这里不讨论实现方式，只讨论实体类型、关系类型和领域适配机制。
 
+本文对应 [GOAL.md](../GOAL.md) 中 canonical end-to-end flow 的 schema 约束层：Story Schema Pack 约束 `Mention Extraction`、`Event Candidate Extraction`、`Fact Assertions` 和 `Graph Projection` 能生成哪些实体、事件与关系。本文中的图只说明 schema 如何参与这些节点，不替代主流程。
+
 ## 1. 为什么需要 Schema Pack
 
 小说题材差异很大。仙侠、推理、科幻、都市、同人、历史架空需要关注的实体和关系不同。如果只写死一套通用关系，系统会过度泛化；如果完全交给模型自由抽取，图谱会不稳定。

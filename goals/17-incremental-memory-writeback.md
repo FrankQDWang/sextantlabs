@@ -2,6 +2,8 @@
 
 > 本文档定义当作者新增正文、导入引用材料、修改设定或追加角色卡时，系统如何把新增材料稳定回写到故事记忆。这里不讨论实现，只讨论数据流和记忆更新策略。
 
+本文对应 [GOAL.md](../GOAL.md) 中 canonical end-to-end flow 的增量执行方式：新增 SourceDelta 仍沿用 `Structure Parsing`、`Mention Extraction`、`Event Candidate Extraction`、`Event Aggregation`、`Fact Assertions`、`Memory Pages`、`Story Auto-Link` 和 `Continuity & Conflict Policy`。本文中的图说明局部回写策略，不定义另一条全量重抽流程。
+
 ## 1. 目标
 
 Sextant 不是一次性导入整本小说后结束。作者会持续写作、修改、导入参考材料。系统必须支持增量更新。

@@ -2,6 +2,8 @@
 
 > 本文档定义新增材料与既有记忆冲突时如何处理。这里不讨论实现，只讨论冲突类型、自动合并、提醒、阻断 canon promotion 的规则。
 
+本文对应 [GOAL.md](../GOAL.md) 中 canonical end-to-end flow 的 `Fact Assertions` -> `Continuity & Conflict Policy` -> `ReviewItem / Warning` 片段。Conflict Policy 只管理高风险事实、别名和 canon promotion，不阻断 `Raw Source` 保存或 `Processed Markdown View` 生成。
+
 ## 1. 核心判断
 
 小说里的“冲突”不一定是错误。它可能是：

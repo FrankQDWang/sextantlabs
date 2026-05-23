@@ -2,6 +2,8 @@
 
 > 本文档定义 Sextant 记忆系统中的 **thin harness + fat story skills** 思路。这里不讨论技术实现，只讨论数据流、职责边界和记忆系统中的处理协议。
 
+本文对应 [GOAL.md](../GOAL.md) 中 canonical end-to-end flow 的流程编排层：Resolver 负责把输入路由到 Story Skills，Story Skills 再分别覆盖 `Source Normalization` 之后的结构解析、提及抽取、事件聚合、事实派生、记忆回写、冲突检查和证据问答。本文中的流程图是主流程的调度视角，不是另一套数据流。
+
 ## 1. 目标
 
 Sextant 的记忆系统不应该依赖一个巨大的单体流程来处理所有输入。不同输入和任务需要不同的处理协议：手稿导入、原著导入、POV 判断、事件提取、别名归并、Current Canon 重写、连续性检查，都应该拆成可审计的 Story Skill。

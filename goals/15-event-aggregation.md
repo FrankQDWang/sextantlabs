@@ -2,6 +2,8 @@
 
 > 本文档定义 Sextant 如何从原始场景中获得稳定的剧情事件，并从事件派生事实、关系和记忆更新。这里不讨论技术实现，只讨论记忆系统设计。
 
+本文对应 [GOAL.md](../GOAL.md) 中 canonical end-to-end flow 的 `Event Candidate Extraction` -> `Event Aggregation` -> `Fact Assertions` 片段。本文中的流程图只展开事件候选如何变成 CanonicalEvent 和 DerivedFacts，不定义独立于主流程的事件通道。
+
 ## 1. 为什么需要事件聚合
 
 小说记忆不能只保存实体和实体之间的静态关系。小说是事件驱动的：角色相遇、道具转移、秘密揭示、背叛、承诺、死亡、误解、伏笔出现或回收，都会改变后续剧情状态。

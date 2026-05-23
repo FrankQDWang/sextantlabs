@@ -2,6 +2,8 @@
 
 > 本文档定义 Raw Source 如何进入记忆系统，如何清洗、去噪、结构化，并生成可处理的 Markdown View。这里不讨论技术实现，只讨论数据流和设计边界。
 
+本文对应 [GOAL.md](../GOAL.md) 中 canonical end-to-end flow 的起始片段：`Raw Source` -> `Source Preservation` -> `Source Normalization` -> `Structure Parsing`。本文中的 Markdown View 图只展开原始材料如何变成可处理视图，不替代后续 Mention、Event、Fact、MemoryPage 流程。
+
 ## 1. 核心判断
 
 原始材料不应该被直接覆盖或改写。Sextant 应区分三层：

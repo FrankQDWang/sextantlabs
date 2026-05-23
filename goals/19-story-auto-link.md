@@ -2,6 +2,8 @@
 
 > 本文档定义 Sextant 如何借鉴确定性 auto-link 思路，把规范化记忆页、frontmatter、场景出场、事件结构和已确认别名投影为稳定故事图谱。这里不讨论实现，只讨论数据流和规则边界。
 
+本文对应 [GOAL.md](../GOAL.md) 中 canonical end-to-end flow 的 `Memory Pages` -> `Story Auto-Link` -> `Graph Projection` 片段。Story Auto-Link 只消费已经结构化的 MemoryPage、Scene、Event、Fact、AliasRegistry 和 CharacterKnowledge，不从 RawSource 直接建图。
+
 ## 1. 核心目标
 
 Story Auto-Link 的目标不是从原始正文里直接理解整本小说，而是从已经结构化的记忆对象中稳定生成图谱边。
