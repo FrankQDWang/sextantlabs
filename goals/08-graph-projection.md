@@ -53,27 +53,21 @@ GraphProjection 可以删除后重建，不能反向覆盖 FactAssertion 或 Cur
 
 GraphProjection 必须使用 [14-story-schema-packs.md](14-story-schema-packs.md) 中定义的 canonical relation whitelist。本文不维护第二套关系词汇。
 
+常见示例：
+
 | 边 | 含义 | 来源 |
 |---|---|---|
 | appears_in | 实体出现在场景或章节 | Mention / Scene |
 | present_at | 角色或阵营在事件中在场、参与或受影响 | CanonicalEvent participants |
 | occurred_at | 事件发生地 | CanonicalEvent location |
 | involves_object | 事件涉及某物品 | CanonicalEvent objects |
-| located_in | 实体位于地点 | FactAssertion |
 | owns | 角色或阵营持有物品 | FactAssertion / object state |
-| member_of | 成员关系 | FactAssertion |
-| family_of | 家庭关系 | FactAssertion |
-| ally_of | 盟友关系 | FactAssertion |
-| enemy_of | 敌对关系 | FactAssertion |
 | knows | 角色知道事实、事件或秘密 | CharacterKnowledge |
-| does_not_know | 角色明确不知道事实、事件或秘密 | CharacterKnowledge |
-| reveals | 事件或场景揭示事实 | CanonicalEvent / Scene |
-| causes | 事件导致事件或事实 | CanonicalEvent / FactAssertion |
-| follows | 事件或场景顺序 | Event aggregation |
-| foreshadows | 伏笔指向未来事件或剧情线 | Plotline Memory |
 | contradicts | 冲突关系 | ReviewItem / Conflict Policy |
 | belongs_to_plotline | 事件、事实或场景属于剧情线 | Plotline Memory |
 | related_to | 弱关联 | MemoryPage / manual / fallback |
+
+完整关系白名单见 [14-story-schema-packs.md](14-story-schema-packs.md) 第 5 节。
 
 ## 4. 图谱构建流程
 
