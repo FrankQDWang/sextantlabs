@@ -26,7 +26,7 @@ flowchart TD
     G --> L
     H --> L
     I --> L
-    J --> M[Review Item / Warning]
+    J --> M[ReviewItem]
     K --> N[带证据回答]
 ```
 
@@ -37,7 +37,7 @@ flowchart TD
 | Harness | 装载输入、选择 skill、保存输出、维护可追溯状态 | 不做领域判断，不决定 canon |
 | Resolver | 根据输入类型和任务目标选择 Story Skill | 不直接处理材料 |
 | Story Skill | 定义某类记忆任务的数据流、判断标准、输出形态 | 不绑定技术实现 |
-| Memory Objects | RawSource、Scene、Mention、Event、Fact、MemoryPage 等 | 不负责流程调度 |
+| Memory Objects | RawSource、Scene、Mention、EventCandidate、CanonicalEvent、FactAssertion、MemoryPage 等 | 不负责流程调度 |
 
 ## 3. 为什么需要 Story Skills
 
@@ -45,7 +45,7 @@ flowchart TD
 |---|---|---|
 | 输入类型不同 | 所有材料走同一套流程，容易误判 | 不同材料走不同处理协议 |
 | 小说题材不同 | 单一 prompt 很快膨胀 | schema pack + skill 分工 |
-| 事件和实体混杂 | LLM 一步抽图，难以调试 | 先 Mention，再 Event，再 Fact |
+| 事件和实体混杂 | LLM 一步抽图，难以调试 | 先 Mention，再 EventCandidate，再 CanonicalEvent，再 FactAssertion |
 | 用户新增片段 | 不知道该更新哪些记忆页 | skill 明确回写规则 |
 | 连续性检查 | 变成自由问答 | skill 明确检查哪些冲突 |
 
@@ -53,17 +53,17 @@ flowchart TD
 
 | Skill | 输入 | 主要输出 | 是否阻塞主流程 |
 |---|---|---|---:|
-| ingest-draft | 作者新手稿、章节、片段 | RawSource、Scene、Mention、Event、MemoryPage 更新 | 否 |
+| ingest-draft | 作者新手稿、章节、片段 | RawSource、Scene、Mention、EventCandidate、MemoryPage 更新 | 否 |
 | ingest-canon-source | 授权原著、同人参考、设定集 | Canon Source、实体、事件、证据 | 否 |
 | split-structure | 原始文本 | Chapter、Scene、SourceSpan | 是，结构解析是后续基础 |
 | detect-pov | Scene | ScenePOV、CharacterKnowledge 候选 | 否 |
 | extract-mentions | Scene / SourceSpan | Mention | 否 |
 | resolve-alias | Mention、AliasRegistry | AliasRecord、CanonicalEntity 连接 | 否 |
 | extract-events | Scene、Mention、Entity | EventCandidate | 否 |
-| aggregate-events | EventCandidate、已有事件 | CanonicalEvent、RelatedEvent | 否 |
+| aggregate-events | EventCandidate、已有事件 | CanonicalEvent、related event candidate | 否 |
 | derive-facts | CanonicalEvent、Entity | FactAssertion | 否 |
-| rewrite-current-canon | 新证据、旧 MemoryPage | 更新后的 Current Canon | 否 |
-| check-continuity | 新事实、旧状态、POV、时间线 | ContinuityWarning / ReviewItem | 否，除高风险 canon promotion |
+| rewrite-current-canon | 已通过 gate 的新证据、旧 MemoryPage | 更新后的 Current Canon | 否 |
+| check-continuity | 新事实、旧状态、POV、时间线 | ReviewItem | 否，除高风险 canon promotion |
 | answer-with-evidence | 作者问题 | Evidence-backed Answer | 不适用 |
 | build-next-page-context | 当前场景、POV、记忆状态 | ContextPack | 不适用 |
 
