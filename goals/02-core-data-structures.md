@@ -6,6 +6,7 @@
 
 ```mermaid
 erDiagram
+    SourceDelta }o--|| RawSource : creates_or_updates
     RawSource ||--o{ SourceVersion : has
     SourceVersion ||--o{ ProcessedMarkdownView : normalizes_to
     ProcessedMarkdownView ||--o{ Chapter : contains
@@ -67,7 +68,30 @@ erDiagram
 | experimental | 试写、实验性材料 |
 | model_suggestion | 模型建议，不能自动成为 canon |
 
-## 3. RawSource
+## 3. SourceDelta
+
+SourceDelta 是一次增量 ingest 的输入 envelope，不是长期事实源，也不是 SourceSpan 的替代品。它最终会落到 `RawSource + SourceVersion + ProcessedMarkdownView`。
+
+| 字段 | 含义 |
+|---|---|
+| delta_id | 增量输入 ID |
+| change_type | new_source / new_version / append / replace / metadata_update |
+| source_id | 目标 RawSource，可为空 |
+| version_id | 目标 SourceVersion，可为空 |
+| submitted_text_ref | 本次提交的文本或材料引用 |
+| source_type | 见 `source_type` 枚举 |
+| source_scope | 见 `source_scope` 枚举 |
+| affected_range | 被追加或替换的范围，可为空 |
+| submitted_by | 作者 / 系统 / 导入来源 |
+| created_at | 提交时间 |
+
+处理关系：
+
+```text
+SourceDelta -> RawSource / SourceVersion -> ProcessedMarkdownView -> SourceSpan
+```
+
+## 4. RawSource
 
 原始材料本身。RawSource 不应被 ProcessedMarkdownView 或 MemoryPage 替代。
 
@@ -81,7 +105,7 @@ erDiagram
 | raw_text_ref | 原文位置或引用 |
 | created_by | 作者 / 系统 / 导入来源 |
 
-## 4. SourceVersion
+## 5. SourceVersion
 
 RawSource 的版本记录。
 
@@ -94,7 +118,7 @@ RawSource 的版本记录。
 | created_at | 版本产生时间 |
 | supersedes_version_id | 被替代的旧版本，可为空 |
 
-## 5. ProcessedMarkdownView
+## 6. ProcessedMarkdownView
 
 RawSource 的规范化处理视图。它可重建，不是最终证据源。
 
@@ -107,7 +131,9 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | raw_offset_map_ref | processed span 到 raw offset 的映射 |
 | view_status | current / stale / rebuilt / deprecated |
 
-## 6. Chapter
+约束：同一个 `SourceVersion` 同时最多只有一个 `ProcessedMarkdownView.view_status = current`。其他视图只能用于审计、比较或重建，不能参与默认抽取流程。
+
+## 7. Chapter
 
 章节级结构。
 
@@ -121,7 +147,7 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | end_span | 结束位置 |
 | summary | 可选章节摘要 |
 
-## 7. Scene
+## 8. Scene
 
 场景是小说记忆的核心结构单元。
 
@@ -138,7 +164,7 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | scene_summary | 场景摘要 |
 | scene_function | reveal / conflict / transition / setup / payoff / other |
 
-## 8. SourceSpan
+## 9. SourceSpan
 
 证据片段。任何事实、事件、关系、警告都应能回到 SourceSpan。
 
@@ -158,7 +184,7 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | speaker_entity_id | 说话人，可为空 |
 | narration_layer | narrator / dialogue / inner_thought / author_note |
 
-## 9. Mention
+## 10. Mention
 
 原文里的“提及”，不是最终实体。
 
@@ -173,7 +199,7 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | resolution_status | unresolved / auto_resolved / proposed / user_confirmed / rejected |
 | confidence | 置信度 |
 
-## 10. AliasRecord
+## 11. AliasRecord
 
 别名记录，不是用户确认队列。
 
@@ -187,7 +213,7 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | evidence_span_ids | 支持证据 |
 | confidence | 置信度 |
 
-## 11. CanonicalEntity
+## 12. CanonicalEntity
 
 稳定故事实体。
 
@@ -200,7 +226,7 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | first_seen_scene_id | 首次出现 |
 | description | 简述 |
 
-## 12. EventCandidate
+## 13. EventCandidate
 
 从 Scene 中抽出的剧情事件候选，保留不确定性。
 
@@ -218,7 +244,7 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | confidence | 置信度 |
 | aggregation_status | new / merged / related / conflict_version / rejected |
 
-## 13. CanonicalEvent
+## 14. CanonicalEvent
 
 聚合后的稳定剧情事件。CanonicalEvent 是事件层的核心对象。
 
@@ -238,7 +264,7 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | consequence_summary | 后果摘要 |
 | evidence_span_ids | 支持证据 |
 
-## 14. FactAssertion
+## 15. FactAssertion
 
 带证据的事实断言。FactAssertion 可以先进入 evidence/log，但不一定直接进入 Current Canon。
 
@@ -255,7 +281,7 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | confidence | 置信度 |
 | source_scope | 继承或引用来源语义地位 |
 
-## 15. EvidenceLogEntry
+## 16. EvidenceLogEntry
 
 可以先写入的证据日志，不等于 Current Canon 改写。
 
@@ -269,7 +295,7 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | source_span_ids | 证据 |
 | log_status | active / proposed / disputed / deprecated |
 
-## 16. CharacterKnowledge
+## 17. CharacterKnowledge
 
 角色认知状态。
 
@@ -282,7 +308,7 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | certainty | knows / suspects / misunderstands / false_belief |
 | hidden_from | 对哪些角色仍然隐藏 |
 
-## 17. MemoryPage
+## 18. MemoryPage
 
 面向作者和续写系统的记忆页。
 
@@ -300,14 +326,14 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | source_refs | 证据引用 |
 | canon_status | current / proposed / disputed / deprecated |
 
-## 18. ReviewItem
+## 19. ReviewItem
 
 统一风险对象。连续性警告、别名冲突、canon promotion 风险都应表达为 ReviewItem。
 
 | 字段 | 含义 |
 |---|---|
 | review_id | ReviewItem ID |
-| review_type | alias_conflict / state_conflict / pov_conflict / timeline_conflict / canon_conflict / continuity_warning / event_merge_conflict |
+| review_type | alias_conflict / event_merge_conflict / state_conflict / object_state_conflict / knowledge_conflict / pov_conflict / timeline_conflict / relationship_conflict / canon_conflict / version_conflict / source_scope_conflict / continuity_warning |
 | severity | low / medium / high |
 | status | open / dismissed / resolved / superseded |
 | summary | 风险摘要 |
@@ -321,7 +347,7 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | resolved_at | 处理时间，可为空 |
 | side_effects | 对 MemoryPage / GraphProjection / ContextPack 的影响说明 |
 
-## 19. GraphProjection
+## 20. GraphProjection
 
 可重建故事图谱投影。
 
@@ -333,7 +359,7 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | relation_whitelist_version | 使用的关系白名单版本 |
 | projection_status | current / stale / rebuilt |
 
-## 20. ContextPack
+## 21. ContextPack
 
 续写或问答时按需生成的上下文包。ContextPack 不在每次 ingest 后自动生成。
 
@@ -346,7 +372,7 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | evidence_span_ids | 证据来源 |
 | generated_for | 作者问题或续写请求 |
 
-## 21. Source-of-truth 顺序
+## 22. Source-of-truth 顺序
 
 ```text
 RawSource / SourceSpan
