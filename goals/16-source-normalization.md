@@ -82,6 +82,20 @@ sequenceDiagram
     Memory-->>Raw: 保留证据回链
 ```
 
+### 3.1 current view 约束
+
+同一个 `SourceVersion` 可以因为不同 cleaning profile 被重建出多个 ProcessedMarkdownView，但同一时间最多只能有一个 view 处于 `current` 状态。
+
+```text
+SourceVersion
+  ├─ ProcessedMarkdownView: current      ← 默认抽取流程只使用这一份
+  ├─ ProcessedMarkdownView: stale        ← 旧处理视图
+  ├─ ProcessedMarkdownView: rebuilt      ← 重建记录
+  └─ ProcessedMarkdownView: deprecated   ← 不再使用
+```
+
+如果没有这个约束，同一版本可能同时产生多套章节、SourceSpan offset 和事件候选，导致后续记忆无法对齐。
+
 ## 4. 三类清洗
 
 ### 4.1 安全清洗
@@ -137,6 +151,7 @@ source_scope: user_draft
 title: 第三章
 raw_hash: sha256:...
 cleaning_profile: draft_profile_v1
+view_status: current
 ---
 
 # Chapter 3
@@ -231,7 +246,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     A[RawSource] --> B[Source Normalization]
-    B --> C[ProcessedMarkdownView]
+    B --> C[ProcessedMarkdownView: current]
     C --> D[Chapter / Scene]
     D --> E[SourceSpan]
     E --> F[Mention]
@@ -249,7 +264,7 @@ Sextant 应保留 RawSource，同时生成可重建的 ProcessedMarkdownView。
 原则是：
 
 ```text
-原文保真；处理视图规范；source_type 管清洗；source_scope 管 canon 权重；证据链不断；语义不擅自删除。
+原文保真；处理视图规范；每个 SourceVersion 只有一个 current view；source_type 管清洗；source_scope 管 canon 权重；证据链不断；语义不擅自删除。
 ```
 
 清洗不是为了让文本“更像摘要”，而是为了让记忆系统能稳定定位章节、场景、证据和来源。
