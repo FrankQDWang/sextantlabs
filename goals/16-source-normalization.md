@@ -1,8 +1,6 @@
 # 16. 原始材料规范化与 Markdown View
 
-> 本文档定义 Raw Source 如何进入记忆系统，如何清洗、去噪、结构化，并生成可处理的 Markdown View。这里不讨论技术实现，只讨论数据流和设计边界。
-
-本文对应 [GOAL.md](../GOAL.md) 中 canonical end-to-end flow 的起始片段：`Raw Source` -> `Source Preservation` -> `Source Normalization` -> `Structure Parsing`。本文中的 Markdown View 图只展开原始材料如何变成可处理视图，不替代后续 Mention、Event、Fact、MemoryPage 流程。
+> 本文档定义 RawSource 如何进入记忆系统，如何清洗、去噪、结构化，并生成可处理的 ProcessedMarkdownView。这里不讨论技术实现，只讨论数据流和设计边界。
 
 ## 1. 核心判断
 
@@ -10,19 +8,58 @@
 
 ```mermaid
 flowchart TD
-    A[Raw Source\n原始材料，不可破坏] --> B[Processed Markdown View\n规范化处理视图，可重建]
-    B --> C[Memory Page\n长期故事记忆，可重写]
+    A[RawSource\n原始材料，不可破坏] --> B[ProcessedMarkdownView\n规范化处理视图，可重建]
+    B --> C[MemoryPage\n长期故事记忆，可重写]
 ```
 
 | 层 | 作用 | 是否可改写 | 是否作为最终证据 |
 |---|---|---:|---:|
-| Raw Source | 保存原始文本、版本、来源 | 否 | 是 |
-| Processed Markdown View | 为记忆系统提供统一处理格式 | 是，可重建 | 间接 |
-| Memory Page | 面向作者和 AI 的 Current Canon / Log / Open Threads | 是 | 需引用 Raw Source / SourceSpan |
+| RawSource | 保存原始文本、版本、来源 | 否 | 是 |
+| ProcessedMarkdownView | 为记忆系统提供统一处理格式 | 是，可重建 | 间接 |
+| MemoryPage | 面向作者和 AI 的 Current Canon / Log / Open Threads | 是 | 必须引用 RawSource / SourceSpan |
 
-## 2. 为什么要生成 Markdown View
+## 2. source_type 与 source_scope
 
-Markdown View 不是为了替代原文，而是为了让后续处理更稳定：
+`source_type` 和 `source_scope` 是两个不同概念，不能混用。
+
+| 字段 | 描述 | 主要用途 |
+|---|---|---|
+| source_type | 材料格式或来源形态 | 决定 normalization profile |
+| source_scope | 材料在作品记忆中的语义地位 | 决定 canon promotion 权重 |
+
+### 2.1 source_type 枚举
+
+| source_type | 说明 | 推荐 Format Profile |
+|---|---|---|
+| draft_manuscript | 作者当前或历史手稿 | draft profile |
+| canon_source | 授权原著或参考 canon | canon profile |
+| web_serial | 网页连载文本 | web profile |
+| pdf_book | PDF 书籍或文档 | pdf profile |
+| ocr_text | OCR 文本 | ocr profile |
+| author_notes | 作者笔记 | notes profile |
+| outline | 大纲或计划 | outline profile |
+| character_sheet | 角色卡 | character profile |
+| worldbuilding | 世界观设定集 | worldbuilding profile |
+| model_output | 模型生成候选内容 | model-output profile |
+| other | 其他 | generic profile |
+
+### 2.2 source_scope 枚举
+
+| source_scope | 含义 | 默认 canon 权重 |
+|---|---|---:|
+| user_draft | 作者当前正文草稿 | 高 |
+| user_published | 作者已确认发布或定稿内容 | 最高 |
+| external_canon | 原著或同人参考 canon | 高，但只在参考上下文内 |
+| author_note | 作者明确设定或说明 | 高 |
+| outline_plan | 大纲、计划、未来剧情意图 | 中 |
+| reference_only | 仅供参考，不自动覆盖正文 canon | 中低 |
+| discarded_draft | 旧稿、废稿、已废弃版本 | 低 |
+| experimental | 试写、实验性材料 | 低 |
+| model_suggestion | 模型建议，不能自动成为 canon | 最低 |
+
+## 3. 为什么要生成 ProcessedMarkdownView
+
+ProcessedMarkdownView 不是为了替代原文，而是为了让后续处理更稳定：
 
 - 统一章节、场景、SourceSpan 的表示；
 - 保留 raw offset 映射；
@@ -32,32 +69,18 @@ Markdown View 不是为了替代原文，而是为了让后续处理更稳定：
 
 ```mermaid
 sequenceDiagram
-    participant Raw as Raw Source
+    participant Raw as RawSource
     participant Norm as Source Normalizer
-    participant View as Markdown View
+    participant View as ProcessedMarkdownView
     participant Skill as Story Skills
     participant Memory as Memory Objects
 
     Raw->>Norm: 输入原始材料
     Norm->>View: 生成规范化 Markdown View
     View->>Skill: 作为处理输入
-    Skill->>Memory: 生成 SourceSpan / Mention / Event / Fact
+    Skill->>Memory: 生成 SourceSpan / Mention / EventCandidate / FactAssertion
     Memory-->>Raw: 保留证据回链
 ```
-
-## 3. 输入材料类型
-
-| Source Type | 说明 | 清洗重点 |
-|---|---|---|
-| draft_manuscript | 作者正在写的手稿 | 章节、场景、作者临时标记 |
-| canon_source | 授权原著或参考 canon | 保真、证据回链、章节结构 |
-| web_serial | 网页连载文本 | 去导航、广告、评论、打赏区 |
-| pdf_book | PDF 书籍或文档 | 页眉页脚、断行、页码 |
-| ocr_text | OCR 文本 | 标记不确定字、断行修复 |
-| author_notes | 作者笔记 | 区分设定、todo、灵感、废案 |
-| outline | 大纲 | 不作为正文事件，作为作者意图 |
-| character_sheet | 角色卡 | 转换成角色设定输入 |
-| worldbuilding | 世界观设定集 | 转换成 lore/location/faction memory |
 
 ## 4. 三类清洗
 
@@ -82,11 +105,11 @@ sequenceDiagram
 | 清洗项 | 说明 | 约束 |
 |---|---|---|
 | 章节编号规范化 | 第三章 / Chapter 3 等统一标记 | 不改变原文展示 |
-| 段落重排 | OCR 或 PDF 断行修复 | 保留原 offset |
+| 段落重排 | OCR 或 PDF 断行修复 | 保留 raw offset |
 | 说话人标签识别 | 识别“某某：” | 只标注，不改语义 |
 | 脚注/尾注分离 | 不混入正文事件 | 仍可引用 |
 | 页眉页脚识别 | PDF 场景常见 | 默认标记，不直接丢弃 |
-| 网页噪声标记 | 广告、导航、评论 | 可排除出正文处理 |
+| 网页噪声标记 | 广告、导航、评论 | 可排除出正文处理，但不删除 RawSource |
 
 ### 4.3 语义清洗
 
@@ -101,18 +124,19 @@ sequenceDiagram
 | 口头禅 | 可能是角色识别特征 |
 | 看似废话的对话 | 可能包含关系状态变化 |
 
-## 5. Markdown View 格式
+## 5. ProcessedMarkdownView 格式
 
-Processed Markdown View 应该让后续系统容易定位结构和证据。
+ProcessedMarkdownView 应该让后续系统容易定位结构和证据。
 
 ```md
 ---
 source_id: src_001
+version_id: ver_001
 source_type: draft_manuscript
+source_scope: user_draft
 title: 第三章
-version: draft-2026-05-23
 raw_hash: sha256:...
-cleaning_profile: draft_manuscript_v1
+cleaning_profile: draft_profile_v1
 ---
 
 # Chapter 3
@@ -134,13 +158,13 @@ cleaning_profile: draft_manuscript_v1
 
 ## 6. Raw Offset Mapping
 
-任何 SourceSpan 都必须能追溯到 Raw Source。
+任何 SourceSpan 都必须能追溯到 RawSource。
 
 ```mermaid
 flowchart LR
     A[Processed Text Span] --> B[raw_start_offset]
     A --> C[raw_end_offset]
-    B --> D[Raw Source]
+    B --> D[RawSource]
     C --> D
     D --> E[原文证据]
 ```
@@ -154,21 +178,25 @@ flowchart LR
 
 ## 7. Format Profile
 
-Format Profile 定义不同材料的规范化策略。
+Format Profile 由 `source_type` 决定。
 
 ```mermaid
 flowchart TD
-    A[Raw Source] --> B{source_type}
+    A[RawSource] --> B{source_type}
     B -->|draft_manuscript| C[draft profile]
-    B -->|web_serial| D[web profile]
-    B -->|pdf_book| E[pdf profile]
-    B -->|ocr_text| F[ocr profile]
-    B -->|author_notes| G[notes profile]
-    C --> H[Markdown View]
-    D --> H
-    E --> H
-    F --> H
-    G --> H
+    B -->|canon_source| D[canon profile]
+    B -->|web_serial| E[web profile]
+    B -->|pdf_book| F[pdf profile]
+    B -->|ocr_text| G[ocr profile]
+    B -->|author_notes| H[notes profile]
+    B -->|outline| I[outline profile]
+    C --> J[ProcessedMarkdownView]
+    D --> J
+    E --> J
+    F --> J
+    G --> J
+    H --> J
+    I --> J
 ```
 
 | Profile | 主要目标 |
@@ -179,26 +207,31 @@ flowchart TD
 | pdf profile | 修复页码、页眉页脚、断行 |
 | ocr profile | 标记不确定文本，不擅自修正 |
 | notes profile | 区分设定、todo、废案、灵感 |
+| outline profile | 作为作者意图，不直接生成正文事件 |
+| model-output profile | 保持低权重，不能自动进入 Current Canon |
 
-## 8. 不同材料的 canon 权重
+## 8. source_scope 与 canon promotion
 
-Markdown View 还应保留来源权重，防止不同材料互相覆盖。
+`source_scope` 不参与清洗规则选择，而参与 Conflict Policy Gate 和 Canon Promotion。
 
-| Source Scope | 含义 | 默认权重 |
-|---|---|---|
-| user_draft | 作者当前正文 | 高 |
-| author_note | 作者明确设定 | 高 |
-| external_canon | 原著或参考材料 | 高，但仅在同人/参考上下文内 |
-| outline | 大纲或计划 | 中 |
-| discarded_draft | 旧草稿或废案 | 低 |
-| model_suggestion | 模型建议 | 低，不能自动成为 canon |
+| source_scope | 默认处理 |
+|---|---|
+| user_published | 高优先级，可直接参与 canon promotion，但仍需证据 |
+| user_draft | 可参与 canon promotion，但版本变化需记录 |
+| author_note | 可参与 canon promotion，需标记来源为作者设定 |
+| external_canon | 在同人或参考上下文内权重高，但通常不覆盖用户正文 |
+| outline_plan | 记录为未来意图，不自动当作已发生事件 |
+| reference_only | 只用于检索和对照 |
+| discarded_draft | 保留历史，不影响当前 canon |
+| experimental | 保留试写，不自动提升 |
+| model_suggestion | 只能作为建议，不能自动提升 |
 
 ## 9. 规范化后的数据流
 
 ```mermaid
 flowchart TD
-    A[Raw Source] --> B[Source Normalization]
-    B --> C[Processed Markdown View]
+    A[RawSource] --> B[Source Normalization]
+    B --> C[ProcessedMarkdownView]
     C --> D[Chapter / Scene]
     D --> E[SourceSpan]
     E --> F[Mention]
@@ -211,12 +244,12 @@ flowchart TD
 
 ## 10. 结论
 
-Sextant 应保留 Raw Source，同时生成可重建的 Processed Markdown View。
+Sextant 应保留 RawSource，同时生成可重建的 ProcessedMarkdownView。
 
 原则是：
 
 ```text
-原文保真；处理视图规范；证据链不断；语义不擅自删除。
+原文保真；处理视图规范；source_type 管清洗；source_scope 管 canon 权重；证据链不断；语义不擅自删除。
 ```
 
 清洗不是为了让文本“更像摘要”，而是为了让记忆系统能稳定定位章节、场景、证据和来源。
