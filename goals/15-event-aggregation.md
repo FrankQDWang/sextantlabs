@@ -2,7 +2,7 @@
 
 > 本文档定义 Sextant 如何从原始场景中获得稳定的剧情事件，并从事件派生事实、关系和记忆更新。这里不讨论技术实现，只讨论记忆系统设计。
 
-本文对应 [GOAL.md](../GOAL.md) 中 canonical end-to-end flow 的 `Event Candidate Extraction` -> `Event Aggregation` -> `Fact Assertions` 片段。本文中的流程图只展开事件候选如何变成 CanonicalEvent 和 DerivedFacts，不定义独立于主流程的事件通道。
+本文对应 [GOAL.md](../GOAL.md) 中 canonical end-to-end flow 的 `Event Candidate Extraction -> Event Aggregation -> Fact Assertions -> Evidence / Log Writeback -> Conflict Policy Gate -> Canon Promotion` 片段。本文只展开事件候选如何变成 CanonicalEvent 和 DerivedFacts，不定义独立于主流程的事件通道。
 
 ## 1. 为什么需要事件聚合
 
@@ -21,26 +21,34 @@ flowchart TD
     C --> D{是否匹配已有事件}
     D -->|是| E[合并到 CanonicalEvent]
     D -->|否| F[创建新 CanonicalEvent]
-    E --> G[DerivedFacts]
+    E --> G[DerivedFacts / FactAssertion]
     F --> G
-    G --> H[MemoryPage Writeback]
-    G --> I[GraphProjection]
+    G --> H[Evidence / Log Writeback]
+    G --> I[Conflict Policy Gate]
+    I -->|低风险 / 作者接受| J[Canon Promotion]
+    I -->|中高风险| K[ReviewItem]
+    J --> L[MemoryPage Current Canon Rewrite]
+    H --> M[GraphProjection: proposed / disputed / canon edges]
+    L --> M
 ```
+
+关键原则：**事件聚合可以产生事实候选，但不能绕过 Conflict Policy Gate 直接改写 Current Canon。**
 
 ## 2. 事件不是普通关系
 
 | 层级 | 作用 | 例子 |
 |---|---|---|
 | Entity | 稳定对象 | Mira、Lantern Map、Harbor Nine |
-| Event | 发生了什么 | Lantern Map 被偷 |
-| Fact | 事件造成的状态 | Lantern Map 可能由 Kestrel 持有 |
+| EventCandidate | 从场景中抽出的事件候选 | “地图似乎被 Kestrel 拿走” |
+| CanonicalEvent | 聚合后的稳定剧情事件 | Lantern Map 被偷 |
+| FactAssertion | 事件造成的状态断言 | Lantern Map 可能由 Kestrel 持有 |
 | Relation | 图谱中的连接 | Kestrel owns Lantern Map |
 
 事件是聚合节点。它连接参与者、地点、物品、时间、证据和后果。
 
 ```mermaid
 flowchart TD
-    E[Event: Lantern Map 被偷]
+    E[CanonicalEvent: Lantern Map 被偷]
     E --> A[Participant: Mira]
     E --> B[Participant: Kestrel]
     E --> C[Object: Lantern Map]
@@ -58,7 +66,9 @@ flowchart LR
     B --> C[EventSignature]
     C --> D[Aggregation]
     D --> E[CanonicalEvent]
-    E --> F[DerivedFacts]
+    E --> F[DerivedFacts / FactAssertion]
+    F --> G[Evidence / Log]
+    F --> H[Conflict Gate]
 ```
 
 ### Step 1：从 Scene 抽 EventCandidate
@@ -67,7 +77,7 @@ flowchart LR
 
 | 字段 | 说明 |
 |---|---|
-| event_type | 事件类型，必须在 schema 白名单内 |
+| event_type | 事件类型，必须在 Story Schema Pack 白名单内 |
 | summary | 事件摘要 |
 | participants | 参与角色或阵营 |
 | objects | 涉及物品 |
@@ -131,23 +141,26 @@ object_transfer | lantern-map | mira/kestrel | harbor-nine | ch003-ch004 | owner
 
 ### Step 5：从 CanonicalEvent 派生事实
 
-CanonicalEvent 是事实和关系的来源之一。
+CanonicalEvent 是事实和关系的来源之一，但派生结果必须先进入 Evidence / Log 和 Conflict Policy Gate。
 
 ```mermaid
 flowchart TD
     A[CanonicalEvent] --> B[FactAssertion]
-    B --> C[CharacterKnowledge]
-    B --> D[Object State]
-    B --> E[Relationship State]
-    B --> F[Location State]
-    B --> G[GraphProjection]
+    B --> C[CharacterKnowledge candidate]
+    B --> D[Object State candidate]
+    B --> E[Relationship State candidate]
+    B --> F[Location State candidate]
+    B --> G[EvidenceLogEntry]
+    B --> H[Conflict Policy Gate]
+    H -->|通过| I[Canon Promotion]
+    H -->|风险| J[ReviewItem]
 ```
 
 ## 4. 事件类型白名单
 
-第一阶段只保留对写作记忆真正有用的事件类型。
+事件类型白名单以 [14-story-schema-packs.md](14-story-schema-packs.md) 的 `Canonical Event Type Whitelist` 为唯一 source-of-truth。本文只列常用示例，完整白名单见 14。
 
-| 事件类型 | 说明 |
+| 常用事件类型 | 说明 |
 |---|---|
 | first_meeting | 角色第一次相遇 |
 | discovery | 发现某物、某地、某线索 |
@@ -157,12 +170,11 @@ flowchart TD
 | conflict | 冲突、战斗、争吵 |
 | promise | 承诺、誓言、交易 |
 | betrayal | 背叛、出卖 |
-| death | 死亡或重伤 |
-| travel | 重要移动、抵达、离开 |
 | relationship_change | 关系变化 |
 | foreshadowing | 伏笔出现 |
 | payoff | 伏笔回收 |
 | decision | 关键决定 |
+| other | 无法归类但确有叙事后果的事件 |
 
 ## 5. 事件粒度标准
 
@@ -185,47 +197,65 @@ flowchart TD
 
 | 状态 | 含义 |
 |---|---|
-| canon | 已进入当前 canon |
-| proposed | 系统认为重要，但证据不足 |
+| canon | 已通过 gate 或作者接受，进入当前 canon |
+| proposed | 系统认为重要，但证据或风险尚不足以升格 |
 | disputed | 存在多个版本或冲突证据 |
 | deprecated | 被后续草稿或作者设定替代 |
 | external_canon | 来自原著或参考材料 |
 | author_note | 来自作者明确设定 |
 
-## 7. 事件聚合与 Current Canon 回写
+## 7. 事件聚合与 Canon Promotion
 
 ```mermaid
 sequenceDiagram
     participant Scene as Scene
     participant EC as EventCandidate
     participant CE as CanonicalEvent
-    participant Fact as DerivedFacts
+    participant Fact as FactAssertion
+    participant Log as Evidence / Log
+    participant Gate as Conflict Policy Gate
     participant Page as MemoryPage
     participant Review as ReviewItem
+    participant Graph as GraphProjection
 
     Scene->>EC: 抽取事件候选
     EC->>CE: 规则聚合或新建事件
     CE->>Fact: 派生事实和状态变化
-    Fact->>Page: 回写相关角色/地点/物品/剧情线
-    Fact->>Review: 如果冲突或低置信，生成 ReviewItem
+    Fact->>Log: 写入事件日志、证据引用、proposed fact
+    Fact->>Gate: 检查状态、时间线、POV、别名、物品归属风险
+    Gate-->>Page: 低风险或作者接受后改写 Current Canon
+    Gate-->>Review: 中高风险生成 ReviewItem
+    Log-->>Graph: 投影 proposed / disputed 边
+    Page-->>Graph: 投影 canon 边
 ```
 
-## 8. 与实体关系的区别
+## 8. GraphProjection 状态边
+
+事件聚合产生的图谱边必须带状态。
+
+| 边状态 | 来源 | 是否可作为 canon 使用 |
+|---|---|---:|
+| canon | 通过 gate 或作者接受 | 是 |
+| proposed | 有证据但未通过 gate | 否，只能作为风险/候选上下文 |
+| disputed | 有冲突版本 | 否，只能进入 ReviewItem 或风险区 |
+| outdated | 曾经有效但被新版本替代 | 否 |
+
+## 9. 与实体关系的区别
 
 | 问题 | 只用实体关系 | 引入事件聚合 |
 |---|---|---|
-| 谁参与了某次冲突 | 关系分散，不易查 | Event 直接聚合参与者 |
-| 物品为什么换主人 | 只看到 owns 改变 | Event 记录转移原因 |
+| 谁参与了某次冲突 | 关系分散，不易查 | CanonicalEvent 直接聚合参与者 |
+| 物品为什么换主人 | 只看到 owns 改变 | CanonicalEvent 记录转移原因 |
 | 角色什么时候知道秘密 | 很难表达 | knowledge_change event 记录 |
 | 伏笔从哪里开始 | 图边不足 | foreshadowing event 记录 |
 | 多处证据指向同一事件 | 容易重复 | EventSignature 聚合 |
 
-## 9. 结论
+## 10. 结论
 
 事件聚合是小说记忆系统的中间层：
 
 ```text
-Scene -> EventCandidate -> CanonicalEvent -> DerivedFacts -> MemoryPage / GraphProjection
+Scene -> EventCandidate -> CanonicalEvent -> FactAssertion -> Evidence / Log -> Conflict Gate -> Canon Promotion
 ```
 
-它让系统既能保留原文证据，又能获得稳定的剧情状态变化。事件不应完全交给模型自由生成，而应由 schema、SourceSpan、EventSignature 和规则聚合共同约束。
+它让系统既能保留原文证据，又能获得稳定的剧情状态变化。事件不应完全交给模型自由生成，也不能绕过 canon promotion gate；它应由 schema、SourceSpan、EventSignature、规则聚合和 Conflict Policy 共同约束。
