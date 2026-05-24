@@ -88,6 +88,8 @@ AI 输出应分为：
 | 作者手动设定 | 是 |
 | Current Canon 摘要 | 有条件，是证据综合 |
 | 模型推测 | 否 |
-| ContinuityWarning | 否，是风险提示 |
+| ReviewItem / continuity_warning | 否，是风险提示 |
 | ContextPack | 否，是写作辅助上下文 |
+
+ReviewItem 可以帮助作者发现风险，但它不是事实本身。只有作者接受或证据通过 Conflict Policy Gate 后，相关内容才可能影响 Current Canon。
 
