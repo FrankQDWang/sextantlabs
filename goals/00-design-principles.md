@@ -33,11 +33,12 @@ flowchart LR
 flowchart TD
     A[Raw Source] --> B[SourceSpan]
     B --> C[Mention]
-    B --> D[FactAssertion]
-    B --> E[EventEntity]
-    D --> F[MemoryPage]
-    E --> F
-    F --> G[Answer / Context Pack]
+    B --> D[EventCandidate]
+    D --> E[CanonicalEvent]
+    E --> F[FactAssertion]
+    B --> F
+    F --> G[MemoryPage]
+    G --> H[Answer / Context Pack]
 ```
 
 没有证据的内容只能被标记为：
@@ -137,15 +138,15 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[Event: 地图被偷] --> B[参与者: Mira]
+    A[CanonicalEvent: 地图被偷] --> B[参与者: Mira]
     A --> C[参与者: Kestrel]
     A --> D[物品: Lantern Map]
     A --> E[地点: Harbor Nine]
-    A --> F[结果: Kestrel 拥有地图]
+    A --> F[结果: Kestrel 可能拥有地图]
     A --> G[结果: Mira 知道地图丢失]
 ```
 
-事件不是普通关系；事件是多个实体、地点、时间、后果的聚合点。
+事件不是普通关系；事件是多个实体、地点、时间、后果的聚合点。系统应先保留 EventCandidate，再聚合成 CanonicalEvent，而不是把场景里的事件候选直接当成稳定 canon。
 
 ## 8. POV-aware
 
