@@ -55,6 +55,19 @@ flowchart TD
 
 Genre Pack 只能扩展 entity types，不能删除 Base entity types。Project Overrides 可以给某些类型添加别名、显示名、抽取提示和风险规则，但不应该让同一概念在不同文档里出现多个名字。
 
+Genre extension type 必须声明它的 `subtype_of`，也就是它继承哪个 base type 的默认行为。
+
+| Genre type | subtype_of | 继承行为 |
+|---|---|---|
+| suspect | character | 可 `appears_in`、`present_at`、`knows` |
+| crime_scene | location / scene | 可 `occurred_at`、`appears_in` |
+| clue | object / lore | 可 `involves_object`、`reveals` |
+| artifact | object | 可 `owns`、`involves_object` |
+| sect | faction | 可 `member_of`、`ally_of`、`enemy_of` |
+| ship | object / location | 取决于项目设定，可作为物品或可进入地点 |
+
+如果 Genre type 没有声明 `subtype_of`，它只能作为 `related_to` 的弱节点参与图谱，不能继承高风险关系。
+
 ## 4. Canonical Event Type Whitelist
 
 第一阶段只保留对写作记忆真正有用的事件类型。
@@ -111,13 +124,13 @@ Genre Pack 只能扩展 entity types，不能删除 Base entity types。Project 
 
 ### 6.1 仙侠 / 玄幻
 
-| 扩展实体 | 说明 |
-|---|---|
-| sect | 宗门 |
-| artifact | 法器 |
-| realm | 境界 |
-| cultivation_method | 功法 |
-| bloodline | 血脉 |
+| 扩展实体 | subtype_of | 说明 |
+|---|---|---|
+| sect | faction | 宗门 |
+| artifact | object | 法器 |
+| realm | lore | 境界 |
+| cultivation_method | lore | 功法 |
+| bloodline | lore | 血脉 |
 
 | 扩展关系 | 说明 |
 |---|---|
@@ -129,13 +142,13 @@ Genre Pack 只能扩展 entity types，不能删除 Base entity types。Project 
 
 ### 6.2 推理 / 悬疑
 
-| 扩展实体 | 说明 |
-|---|---|
-| clue | 线索 |
-| suspect | 嫌疑人 |
-| alibi | 不在场证明 |
-| evidence_item | 证物 |
-| crime_scene | 案发现场 |
+| 扩展实体 | subtype_of | 说明 |
+|---|---|---|
+| clue | object / lore | 线索 |
+| suspect | character | 嫌疑人 |
+| alibi | lore / fact-like note | 不在场证明 |
+| evidence_item | object | 证物 |
+| crime_scene | location / scene | 案发现场 |
 
 | 扩展关系 | 说明 |
 |---|---|
@@ -146,13 +159,13 @@ Genre Pack 只能扩展 entity types，不能删除 Base entity types。Project 
 
 ### 6.3 科幻
 
-| 扩展实体 | 说明 |
-|---|---|
-| planet | 星球 |
-| ship | 舰船 |
-| species | 物种 |
-| technology | 技术 |
-| protocol | 协议 |
+| 扩展实体 | subtype_of | 说明 |
+|---|---|---|
+| planet | location | 星球 |
+| ship | object / location | 舰船 |
+| species | faction / lore | 物种 |
+| technology | lore / object | 技术 |
+| protocol | lore | 协议 |
 
 | 扩展关系 | 说明 |
 |---|---|
