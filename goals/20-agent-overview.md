@@ -37,7 +37,7 @@ Sextant 更接近逐页写作：写当前页，打磨当前页，接受当前页
 | Suggest Next Beat | Agency Pass | 1-5 个下一步方向 | 给作者选择方向 |
 | Draft Next Passage | 选定 beat、ContextPack | DraftCandidate | 生成下一小段正文 |
 | Rewrite Current Page | 当前文本、ContextPack | DraftCandidate | 打磨当前页，不推进剧情 |
-| Agent Review | DraftCandidate、Memory | ReviewItem / Revision Notes | 检查 POV、canon、角色、风险 |
+| Agent Review | DraftCandidate、Memory | AgentReviewFinding / Revision Notes | 检查 POV、canon、角色、风险；不创建正式 ReviewItem |
 | Accept to Memory | 作者接受的文本 | SourceDelta | 进入 Memory 增量回写 |
 
 ## 4. 主循环
@@ -54,14 +54,14 @@ flowchart TD
     F --> I[DraftCandidate / BeatCandidate]
     G --> I
     H --> I
-    I --> J[Agent Review]
+    I --> J[Agent Review\nAgentReviewFinding]
     J --> K{作者接受?}
     K -->|否| L[修改 / 重写 / 换方向]
     L --> C
     K -->|是| M[Accepted Text]
     M --> N[SourceDelta]
     N --> O[Memory Incremental Writeback]
-    O --> P[Updated Memory]
+    O --> P[Updated Memory / ReviewItem]
     P --> A
 ```
 
@@ -71,7 +71,7 @@ flowchart TD
 |---|---:|---|
 | 读取 Memory | 是 | 通过 Writing Context Pack 获取必要上下文 |
 | 生成候选文本 | 是 | 生成 DraftCandidate，不是 canon |
-| 自检风险 | 是 | 产生 ReviewItem 或 Revision Notes |
+| 自检风险 | 是 | 产生 AgentReviewFinding / Revision Notes，不产生正式 ReviewItem |
 | 直接改 Current Canon | 否 | 必须走 Memory 的 Conflict Policy Gate |
 | 直接把草稿入库为正文 | 否 | 需要作者接受 |
 | 把 proposed 边当 canon 写作 | 否 | proposed / disputed 只能作为风险提示 |
@@ -87,6 +87,7 @@ Sextant Agent 第一版不做：
 - 自动决定角色命运；
 - 自动解决所有 ReviewItem；
 - 自动把模型自创设定写入 Memory；
+- 在没有 SourceDelta / SourceSpan 的情况下创建正式 ReviewItem；
 - 把写作过程变成无作者确认的闭环。
 
 ## 7. Agent 工作单元
@@ -133,7 +134,7 @@ flowchart LR
     G --> H[FactAssertion]
     H --> I[Evidence / Log]
     H --> J[Conflict Policy Gate]
-    J --> K[Canon Promotion]
+    J --> K[Canon Promotion / ReviewItem]
 ```
 
 这保证 Agent 不会自己生成、自己相信、自己污染 Current Canon。
