@@ -52,7 +52,33 @@ RoleSlot 表示当前场景需要一个角色承担某种叙事功能。
 | can_use_existing_character | 是否可以由已有角色承担 |
 | reason_not_existing | 如果不适合复用旧角色，原因是什么 |
 
-## 4. 常见角色功能
+## 4. CharacterCastingDecision
+
+CharacterCastingDecision 是 Storytelling Control Layer 的控制产物，不是文本候选，也不直接写 Memory。它记录某个 RoleSlot 应该由已有角色承担、创建新角色，还是避免使用某个角色。
+
+| 字段 | 说明 |
+|---|---|
+| decision_id | cast 决策 ID |
+| role_slot_id | 对应的 RoleSlot |
+| decision_type | reuse_existing / create_new / avoid_character |
+| target_entity_id | 复用已有角色时指向 CanonicalEntity，可为空 |
+| new_character_seed_id | 创建新角色时指向 NewCharacterSeed，可为空 |
+| avoid_entity_ids | 不应使用的已有角色列表，可为空 |
+| rationale | 为什么复用、创建或避免 |
+| reuse_naturalness | 复用旧角色是否自然：natural / strained / contrived |
+| creation_scope | scene_local / chapter_local / recurring_candidate / major_candidate，可为空 |
+| risk_assessment | low / medium / high |
+| agent_review_findings | 可能产生的 AgentReviewFinding 列表 |
+
+### decision_type 说明
+
+| decision_type | 含义 | 下游影响 |
+|---|---|---|
+| reuse_existing | 由已有角色承担 RoleSlot | Next Page Agent 使用 target_entity_id |
+| create_new | 创建 NewCharacterSeed 承担 RoleSlot | Next Page Agent 可以使用该 seed；作者接受后 Memory ingest 决定落点 |
+| avoid_character | 明确避免某些角色承担该功能 | 防止过度复用、巧合感或角色动机崩坏 |
+
+## 5. 常见角色功能
 
 | function | 说明 | 常见例子 |
 |---|---|---|
@@ -67,7 +93,7 @@ RoleSlot 表示当前场景需要一个角色承担某种叙事功能。
 | emotional_mirror | 映照情绪的人 | 让主角看见自己问题的人 |
 | complication | 制造小麻烦的人 | 误会者、打断者、临时阻碍 |
 
-## 5. Reuse vs Create 决策
+## 6. Reuse vs Create 决策
 
 ```mermaid
 flowchart TD
@@ -90,7 +116,7 @@ flowchart TD
 | 新角色是否会稀释当前冲突 | 是 | 否 |
 | 新角色是否会引入重大设定负担 | 是 | 否 |
 
-## 6. 允许自动创建新角色的场景
+## 7. 允许自动创建新角色的场景
 
 以下情况可以默认允许创建低风险新角色：
 
@@ -110,7 +136,7 @@ flowchart TD
 创建一个 scene-local gatekeeper 更自然。
 ```
 
-## 7. 不应创建新角色的场景
+## 8. 不应创建新角色的场景
 
 以下情况不应随便创建新角色：
 
@@ -121,7 +147,7 @@ flowchart TD
 - 已有角色更适合承担这个压力；
 - 新角色会让当前场景焦点分散。
 
-## 8. Cast risks
+## 9. Cast risks
 
 过度复用旧角色或创建过重角色都应成为草稿层 `AgentReviewFinding`。所有 risk_type 以 [26-agent-review-policy.md](26-agent-review-policy.md) 第 4 节为唯一 source-of-truth。
 
@@ -142,19 +168,19 @@ Kestrel 已经连续承担线索持有者、阻拦者、情绪镜像三种功能
 当前 gatekeeper 功能更适合由新的 scene-local 角色承担。
 ```
 
-## 9. 输出
+## 10. 输出
 
 Role Need 与 Cast Expansion 输出：
 
 | 输出 | 说明 |
 |---|---|
 | RoleSlot | 当前场景需要的角色功能 |
-| CharacterCastingDecision | reuse_existing / create_new / avoid_character |
+| CharacterCastingDecision | reuse_existing / create_new / avoid_character 的决策对象 |
 | NewCharacterSeed | 如果创建新角色，提供最小种子 |
 | cast_rationale | 为什么复用或创建 |
 | agent_review_findings | 可能的 AgentReviewFinding 列表 |
 
-## 10. 结论
+## 11. 结论
 
 Cast Expansion 的目标不是鼓励乱造角色，而是避免 Memory salience 让 Agent 过度保守。
 
