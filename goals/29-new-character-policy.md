@@ -15,12 +15,16 @@
 
 ## 2. 新角色分级
 
-| 等级 | 说明 | Memory 处理 | 是否需要作者确认 |
-|---|---|---|---:|
-| Local Extra | 一次性场景人物 | 可只保留 SourceSpan / Mention，不建完整 MemoryPage | 否 |
-| Minor Supporting Character | 可能再次出现的小配角 | 可轻量 MemoryPage，状态 provisional | 不强制 |
-| Recurring Character | 多次出现并影响局部情节 | Character MemoryPage + 简版 Agency Profile | 建议提示 |
-| Major Character | 影响主线、关系线、主题或长期冲突 | 完整 Character MemoryPage + Agency Profile | 是 |
+新角色分级映射到 Memory 模型中的 `CanonicalEntity.cast_tier`，不是 `canonical_status`。
+
+| 等级 | cast_tier | 说明 | Memory 处理 | 是否需要作者确认 |
+|---|---|---|---|---:|
+| Local Extra | local_extra | 一次性场景人物 | 可只保留 SourceSpan / Mention，不建完整 MemoryPage | 否 |
+| Minor Supporting Character | minor_supporting | 可能再次出现的小配角 | 可轻量 MemoryPage，状态 provisional | 不强制 |
+| Recurring Character | recurring | 多次出现并影响局部情节 | Character MemoryPage + 简版 Agency Profile | 建议提示 |
+| Major Character | major | 影响主线、关系线、主题或长期冲突 | 完整 Character MemoryPage + Agency Profile | 是 |
+
+`cast_tier` 表示角色在 cast 中的叙事重要性；`canonical_status` 表示该实体是否 canon / draft / provisional / discarded / contradicted。二者不能混用。
 
 ## 3. NewCharacterSeed
 
@@ -69,14 +73,25 @@ flowchart TD
     F --> G[Memory ingest]
     G --> H[Mention]
     H --> I{出现频率 / 重要性}
-    I -->|一次性| J[Local Extra]
-    I -->|可能再出现| K[Provisional Character MemoryPage]
-    I -->|长期重要| L[Character MemoryPage + Agency Profile]
+    I -->|一次性| J[CanonicalEntity.cast_tier = local_extra\n可无 MemoryPage]
+    I -->|可能再出现| K[cast_tier = minor_supporting\nmemory_depth = light]
+    I -->|长期重要| L[cast_tier = recurring / major\nMemoryPage + Agency Profile]
 ```
 
 关键：Agent 不能直接创建正式角色页。只有作者接受了包含该角色的正文后，Memory 才根据证据决定如何记录。
 
-## 5. 自动允许创建的角色
+## 5. Memory 落点
+
+| cast_tier | CanonicalEntity | MemoryPage | memory_depth | Agency Profile |
+|---|---|---|---|---|
+| local_extra | 可选；也可只保留 Mention | 通常不建 | none / light | 无 |
+| minor_supporting | 是，canonical_status 通常为 provisional 或 canon | 可选轻量页 | light | 无或极简 |
+| recurring | 是 | 是 | standard | 简版 |
+| major | 是 | 是 | full | 完整 |
+
+如果实现选择为 local_extra 创建 CanonicalEntity，应仍设置 `cast_tier = local_extra`，避免它被 ContextPack 当成重要角色反复召回。
+
+## 6. 自动允许创建的角色
 
 以下角色通常可以由 Agent 创建为 Local Extra 或 Minor Supporting Character：
 
@@ -88,7 +103,7 @@ flowchart TD
 - 不掌握重大秘密的人；
 - 不改变长期关系线的人。
 
-## 6. 需要提示作者的角色
+## 7. 需要提示作者的角色
 
 以下角色不应静默创建为长期 canon：
 
@@ -102,7 +117,7 @@ flowchart TD
 
 这些可以作为 DraftCandidate 里的 proposed major character 出现，但必须显式提示作者。
 
-## 7. 升格规则
+## 8. 升格规则
 
 新角色不是一次性决定重要性，而是可以随文本证据升格。
 
@@ -110,21 +125,21 @@ flowchart TD
 stateDiagram-v2
     [*] --> local_extra
     local_extra --> minor_supporting: 再次出现 / 作者标记有用
-    minor_supporting --> recurring_character: 多次影响事件
-    recurring_character --> major_character: 影响主线 / 关系线 / 主题
+    minor_supporting --> recurring: 多次影响事件
+    recurring --> major: 影响主线 / 关系线 / 主题
     minor_supporting --> local_extra: 后续不再出现
-    recurring_character --> deprecated: 作者废弃
+    recurring --> deprecated: 作者废弃
 ```
 
 升格条件：
 
 | 升格目标 | 条件 |
 |---|---|
-| Local Extra -> Minor Supporting | 再次出现，或产生可引用事实 |
-| Minor Supporting -> Recurring | 多次参与事件，或与主角有持续关系 |
-| Recurring -> Major | 影响主线、主题、长期关系、核心秘密 |
+| local_extra -> minor_supporting | 再次出现，或产生可引用事实 |
+| minor_supporting -> recurring | 多次参与事件，或与主角有持续关系 |
+| recurring -> major | 影响主线、主题、长期关系、核心秘密 |
 
-## 8. 降低复杂度的策略
+## 9. 降低复杂度的策略
 
 为了避免 cast 膨胀：
 
@@ -133,11 +148,14 @@ stateDiagram-v2
 - 名字可以推迟确定；
 - 一次性角色可以使用功能性称呼；
 - 只有重复出现或作者标记重要时，才生成 MemoryPage；
-- 新角色不能默认拥有复杂背景。
+- 新角色不能默认拥有复杂背景；
+- ContextPack 应根据 `cast_tier` 和 `memory_depth` 控制召回强度。
 
-## 9. AgentReviewFinding
+## 10. AgentReviewFinding
 
-新角色相关风险属于草稿层风险。
+新角色相关风险属于草稿层风险。所有 risk_type 以 [26-agent-review-policy.md](26-agent-review-policy.md) 第 4 节为唯一 source-of-truth。
+
+常见相关风险：
 
 | risk_type | 说明 |
 |---|---|
@@ -148,7 +166,7 @@ stateDiagram-v2
 
 这些风险只有在作者接受文本并进入 Memory 后，才可能由 Conflict Policy Gate 转成正式 ReviewItem。
 
-## 10. 结论
+## 11. 结论
 
 新角色创建策略的核心是分级：
 
