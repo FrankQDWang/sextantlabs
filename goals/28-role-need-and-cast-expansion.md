@@ -29,11 +29,11 @@ flowchart TD
     B --> C{是否需要角色功能?}
     C -->|否| D[继续当前 cast]
     C -->|是| E[RoleSlot]
-    E --> F[Character Casting Decision]
+    E --> F[CharacterCastingDecision]
     F --> G{复用旧角色是否自然?}
     G -->|是| H[Reuse Existing Character]
     G -->|否| I[Create NewCharacterSeed]
-    H --> J[Prose Rendering Contract]
+    H --> J[ProseRenderingContract]
     I --> J
 ```
 
@@ -121,14 +121,18 @@ flowchart TD
 - 已有角色更适合承担这个压力；
 - 新角色会让当前场景焦点分散。
 
-## 8. Cast Reuse Risk
+## 8. Cast risks
 
-过度复用旧角色应成为草稿层风险。
+过度复用旧角色或创建过重角色都应成为草稿层 `AgentReviewFinding`。所有 risk_type 以 [26-agent-review-policy.md](26-agent-review-policy.md) 第 4 节为唯一 source-of-truth。
+
+常见相关风险：
 
 | risk_type | 含义 | 是否进入正式 ReviewItem |
 |---|---|---:|
 | cast_reuse_risk | 为了安全而过度复用已有角色，导致巧合或世界变小 | 否，通常是 draft-local finding |
 | cast_creation_risk | 新角色承担了过重 canon 功能 | 否，除非接受后造成 Memory 冲突 |
+| cast_focus_risk | 新角色抢走当前场景焦点 | 否 |
+| cast_complexity_risk | cast 扩展太快，读者负担上升 | 否 |
 
 AgentReviewFinding 示例：
 
@@ -148,7 +152,7 @@ Role Need 与 Cast Expansion 输出：
 | CharacterCastingDecision | reuse_existing / create_new / avoid_character |
 | NewCharacterSeed | 如果创建新角色，提供最小种子 |
 | cast_rationale | 为什么复用或创建 |
-| cast_risk | 可能的草稿风险 |
+| agent_review_findings | 可能的 AgentReviewFinding 列表 |
 
 ## 10. 结论
 
