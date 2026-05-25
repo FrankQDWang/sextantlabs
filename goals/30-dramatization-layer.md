@@ -17,15 +17,17 @@
 
 ## 2. 定位
 
-Dramatization Layer 位于 Character Agency Pass 和 prose draft 之间。
+Dramatization Layer 位于 Character Agency Pass 和 ProseRenderingContract 之间。它和 SceneSequelMode 是并行的控制产物，最终由 ProseRenderingContract 汇总。
 
 ```mermaid
 flowchart TD
     A[Character Agency Profile] --> B[Inner State Extraction]
-    B --> C[Dramatic Behavior Plan]
-    C --> D[Scene / Sequel Mode]
-    D --> E[Prose Rendering Contract]
-    E --> F[DraftCandidate]
+    B --> C[DramaticBehaviorPlan]
+    A --> D[SceneSequelMode]
+    C --> E[ProseRenderingContract]
+    D --> E
+    E --> F[Next Page Agent]
+    F --> G[DraftCandidate]
 ```
 
 它的职责是把“角色正在想什么”转成“读者可以看见、听见、感受到什么”。
@@ -44,9 +46,9 @@ Inner state is material, not prose.
 
 内心状态必须先经过戏剧化转译。
 
-## 4. Dramatic Behavior Plan
+## 4. DramaticBehaviorPlan
 
-Dramatic Behavior Plan 是写正文前的中间产物。
+DramaticBehaviorPlan 是写正文前的中间产物。
 
 | 字段 | 说明 |
 |---|---|
@@ -94,19 +96,20 @@ avoid_direct_telling:
 
 ## 6. 直接内心说明预算
 
-Dramatization Layer 不是禁止所有内心句，而是限制其数量和位置。
+Dramatization Layer 不是禁止所有内心句，而是限制其数量和位置。预算由 ProseRenderingContract 最终确定。
 
 | 模式 | 直接内心说明预算 |
 |---|---|
-| action-heavy scene | 很少，通常只允许短句 |
-| dialogue conflict | 少量，用于潜台词后补 |
-| sequel / reaction | 可以多一些，但必须走 dilemma -> decision |
+| action-heavy scene | 0-1 句短内心，且不超过段落体量约 5% |
+| dialogue conflict | 1-2 句短内心，用于潜台词补强 |
+| sequel / reaction | 可以多一些，但必须服务 dilemma -> decision，不超过约 10% |
 | exposition bridge | 可以适度 telling，但不能替代关键戏剧时刻 |
 
 建议规则：
 
 ```text
-每 500 字最多 1-2 句直接内心说明。
+短 passage 优先使用绝对上限；
+长 passage 同时使用比例上限；
 其余内心状态必须通过动作、选择、对话、感官和物体表现。
 ```
 
@@ -120,28 +123,33 @@ Dramatization Layer 不是禁止所有内心句，而是限制其数量和位置
 | 非 POV 角色 | 动作、台词、表情、沉默、矛盾行为 | 直接内心解释 |
 | 不在场角色 | 被提及、被回忆、留下痕迹 | 直接影响当前场景 |
 
-## 8. Dramatization Risk
+## 8. Dramatization risks
 
-如果候选文本没有把内心状态戏剧化，应产生草稿层风险。
+如果候选文本没有把内心状态戏剧化，应产生草稿层 AgentReviewFinding。所有 risk_type 以 [26-agent-review-policy.md](26-agent-review-policy.md) 第 4 节为唯一 source-of-truth。
+
+常见相关风险：
 
 | risk_type | 说明 |
 |---|---|
 | exposition_risk | 直接解释太多，缺少场景行为 |
 | dramatization_risk | 没有动作、选择、对话或 turn |
-| pov_leak_risk | 写了非 POV 角色内心 |
+| non_pov_mind_reading | 写了非 POV 角色内心 |
 | inner_state_overload | 一段里塞入太多心理状态 |
+| telling_over_action | 应该行动表现，却写成解释 |
 
 这些风险默认是 AgentReviewFinding，不是正式 Memory ReviewItem。
 
-## 9. 与 Prose Rendering Contract 的关系
+## 9. 与 ProseRenderingContract 的关系
 
-Dramatization Layer 产出 Dramatic Behavior Plan；Prose Rendering Contract 再规定最终 prose 如何使用它。
+Dramatization Layer 产出 DramaticBehaviorPlan；SceneSequelMode 产出段落模式；ProseRenderingContract 汇总二者并规定最终 prose 如何使用它们。
 
 ```mermaid
 flowchart LR
-    A[Inner State] --> B[Dramatic Behavior Plan]
-    B --> C[Prose Rendering Contract]
-    C --> D[DraftCandidate]
+    A[Inner State] --> B[DramaticBehaviorPlan]
+    C[SceneSequelMode] --> D[ProseRenderingContract]
+    B --> D
+    D --> E[Next Page Agent]
+    E --> F[DraftCandidate]
 ```
 
 ## 10. 结论
