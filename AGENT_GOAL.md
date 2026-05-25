@@ -38,20 +38,22 @@ Sextant Agent 采用逐页推进、角色驱动、非大纲优先的写法。
 
 ## 3. Agent + Memory + Storytelling 总体闭环
 
+Storytelling Control Layer 只产出控制产物；Next Page Agent 才产出 `BeatCandidate` 和 `DraftCandidate`。
+
 ```mermaid
 flowchart TD
     A[Author Position\n当前章节 / 场景 / POV] --> B[Build Writing Context Pack]
     B --> C[Character Agency Pass]
     C --> D[Storytelling Control Layer]
-    D --> E[Role Need / Cast Expansion]
-    D --> F[Scene-Sequel Mode]
-    D --> G[Dramatic Behavior Plan]
-    D --> H[Prose Rendering Contract]
-    E --> I[Next Beat / Passage Plan]
+    D --> E[RoleSlot / CharacterCastingDecision]
+    D --> F[SceneSequelMode]
+    D --> G[DramaticBehaviorPlan]
+    D --> H[ProseRenderingContract]
+    E --> I[Next Page Agent]
     F --> I
     G --> I
     H --> I
-    I --> J[DraftCandidate]
+    I --> J[BeatCandidate / DraftCandidate]
     J --> K[Agent Review\nAgentReviewFinding]
     K --> L{作者接受?}
     L -->|否| M[修改 / 重写 / 换方向]
@@ -72,8 +74,8 @@ flowchart TD
 |---|---|---|
 | Build Writing Context Pack | 为当前写作请求组织 canon、POV、角色、风险、风格上下文 | [21-writing-context-pack.md](goals/21-writing-context-pack.md) |
 | Character Agency Pass | 推演角色在当前压力和认知限制下自然会做什么 | [22-character-agency-profile.md](goals/22-character-agency-profile.md) |
-| Storytelling Control Layer | 判断是否需要新角色，把内心状态转成戏剧化行为，约束 prose 输出 | [27-storytelling-control-layer.md](goals/27-storytelling-control-layer.md) |
-| Next Page Agent | 生成下一步方向、下一小段正文、或重写当前页 | [23-next-page-agent.md](goals/23-next-page-agent.md) |
+| Storytelling Control Layer | 判断是否需要新角色，把内心状态转成戏剧化行为，生成 prose 约束；不直接生成文本候选 | [27-storytelling-control-layer.md](goals/27-storytelling-control-layer.md) |
+| Next Page Agent | 基于 Storytelling Control 产物生成下一步方向、下一小段正文、或重写当前页 | [23-next-page-agent.md](goals/23-next-page-agent.md) |
 | Draft Candidate Lifecycle | 管理候选文本从生成、检查、修改、接受到回写的生命周期 | [24-draft-candidate-lifecycle.md](goals/24-draft-candidate-lifecycle.md) |
 
 ## 5. Storytelling Control Layer 要解决的两个问题
@@ -81,7 +83,7 @@ flowchart TD
 | 问题 | 风险 | 对应机制 |
 |---|---|---|
 | Agent 总是复用已有角色 | 世界变小，旧角色承担过多功能，出现巧合感 | Role Need Detector / Cast Expansion Policy |
-| 内心戏输入太多导致流水账 | 角色状态被平铺说明，缺少行动、冲突、转折 | Dramatization Layer / Inner State Rendering / Prose Contract |
+| 内心戏输入太多导致流水账 | 角色状态被平铺说明，缺少行动、冲突、转折 | Dramatization Layer / Inner State Rendering / ProseRenderingContract |
 
 ## 6. Agent 不做什么
 
@@ -97,7 +99,8 @@ Sextant Agent 第一阶段不追求：
 - 在没有 SourceDelta / SourceSpan 的情况下创建正式 ReviewItem；
 - 用 Agent 自己生成的内容反向证明自己的 canon；
 - 把角色内心状态直接平铺成说明文；
-- 因为 Memory 里已有角色就强行复用旧角色。
+- 因为 Memory 里已有角色就强行复用旧角色；
+- 让 Storytelling Control Layer 直接生成正文候选。
 
 ## 7. Agent 与 Memory 的关系
 
@@ -107,7 +110,7 @@ Memory 是 Agent 的工作环境，但不是 Agent 的私有笔记。
 flowchart LR
     A[Memory\nCanon / Events / POV / Knowledge / Style] --> B[Writing Context Pack]
     B --> C[Storytelling Control Layer]
-    C --> D[Agent]
+    C --> D[Next Page Agent]
     D --> E[DraftCandidate]
     E --> F{作者接受?}
     F -->|否| G[保留为候选或丢弃]
@@ -119,10 +122,10 @@ flowchart LR
 
 | 事情 | 谁负责 |
 |---|---|
-| 提出下一步可能性 | Agent |
+| 提出下一步可能性 | Next Page Agent |
 | 判断当前场景是否需要新角色功能 | Storytelling Control Layer |
 | 把内心状态转成动作、对话、选择、沉默 | Dramatization Layer |
-| 生成候选正文 | Agent |
+| 生成候选方向和候选正文 | Next Page Agent |
 | 交付候选前发现草稿风险 | Agent Review，输出 AgentReviewFinding |
 | 判断是否接受为作品文本 | 作者 |
 | 保存被接受文本 | Memory ingest |
@@ -174,9 +177,9 @@ Memory 先组织当前写作上下文
   ↓
 Agent 推演角色自然行动
   ↓
-Storytelling Control Layer 决定：是否需要新角色、如何戏剧化、当前段落模式是什么
+Storytelling Control Layer 产出控制对象：是否需要新角色、如何戏剧化、当前段落模式是什么
   ↓
-Agent 生成下一步候选
+Next Page Agent 根据控制对象生成下一步候选
   ↓
 Agent 自检草稿风险，产生 AgentReviewFinding
   ↓
