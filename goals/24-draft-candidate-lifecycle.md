@@ -184,16 +184,16 @@ SourceDelta -> RawSource / SourceVersion -> ProcessedMarkdownView -> SourceSpan 
 
 ## 11. 安全生成 SourceDelta
 
-生成 SourceDelta 时必须使用 DraftCandidate 的目标位置字段：
+生成 SourceDelta 时必须使用 DraftCandidate 的目标位置字段。`base_hash` 是生成前校验条件，不是 SourceDelta 持久字段：
 
-| SourceDelta 字段 | 来自 DraftCandidate |
+| 生成 SourceDelta 所需输入 / 校验 | 来自 DraftCandidate |
 |---|---|
 | change_type | append / replace / new_source，由 mode 和作者操作决定 |
 | source_id | target_source_id |
 | version_id | target_version_id |
 | affected_range | affected_range |
 | submitted_text_ref | accepted_text_ref |
-| base_hash | base_hash，用于确认目标文本未过期 |
+| precondition: target text unchanged | base_hash，用于确认目标文本未过期 |
 | source_type / source_scope | 作者接受方式决定 |
 
 如果 `base_hash` 与当前目标版本不一致，系统不应静默生成 replace 型 SourceDelta，应要求作者重新确认或重新生成候选。
