@@ -33,7 +33,7 @@ Sextant Agent 采用逐页推进、角色驱动、非大纲优先的写法。
 | Memory-grounded | Agent 写作前必须读取 Memory 生成 Writing Context Pack | [21-writing-context-pack.md](goals/21-writing-context-pack.md) |
 | Author-sovereign | Agent 不能自己把候选文本写进 canon，必须作者接受 | [24-draft-candidate-lifecycle.md](goals/24-draft-candidate-lifecycle.md) |
 | Evidence-backed | 被接受文本进入 Memory 后，仍走 RawSource / SourceDelta / SourceSpan | [25-agent-memory-writeback.md](goals/25-agent-memory-writeback.md) |
-| Review before canon | 草稿候选需要检查 POV、角色、canon、proposed edge 风险 | [26-agent-review-policy.md](goals/26-agent-review-policy.md) |
+| Review before canon | 草稿候选先产生 AgentReviewFinding；正式 ReviewItem 只由 Memory gate 产生 | [26-agent-review-policy.md](goals/26-agent-review-policy.md) |
 
 ## 3. Agent + Memory 总体闭环
 
@@ -49,7 +49,7 @@ flowchart TD
     F --> I[DraftCandidate]
     G --> I
     H --> I
-    I --> J[Agent Review\nPOV / Canon / Character / Risk]
+    I --> J[Agent Review\nAgentReviewFinding]
     J --> K{作者接受?}
     K -->|否| L[修改 / 重写 / 换方向]
     L --> C
@@ -83,6 +83,7 @@ Sextant Agent 第一阶段不追求：
 - 自动把模型草稿写入 canon；
 - 把 proposed / disputed 记忆当作已确认事实；
 - 绕过 Memory 的 Conflict Policy Gate；
+- 在没有 SourceDelta / SourceSpan 的情况下创建正式 ReviewItem；
 - 用 Agent 自己生成的内容反向证明自己的 canon。
 
 ## 6. Agent 与 Memory 的关系
@@ -106,12 +107,27 @@ flowchart LR
 |---|---|
 | 提出下一步可能性 | Agent |
 | 生成候选正文 | Agent |
+| 交付候选前发现草稿风险 | Agent Review，输出 AgentReviewFinding |
 | 判断是否接受为作品文本 | 作者 |
 | 保存被接受文本 | Memory ingest |
 | 更新 Current Canon | Memory + Conflict Policy Gate |
-| 发现风险 | Agent Review + ReviewItem |
+| 产生正式风险对象 | Memory Conflict Policy，输出 ReviewItem |
 
-## 7. 文档索引
+## 7. Accepted Text 的 source 语义
+
+作者接受 Agent 文本后，文本的 `source_type/source_scope` 由作者接受意图决定，而不是由“模型生成”决定。
+
+| 作者接受方式 | source_type | source_scope |
+|---|---|---|
+| 接受为正文草稿 | draft_manuscript | user_draft |
+| 接受为已确认正文 | draft_manuscript | user_published |
+| 接受为作者笔记 | author_notes | author_note |
+| 接受为大纲或未来计划 | outline / author_notes | outline_plan |
+| 未接受 | 不生成 SourceDelta | 不生成 SourceDelta |
+
+模型来源只作为 provenance 保留，不能让已接受正文继续使用 `model_suggestion` 的低权重 scope。
+
+## 8. 文档索引
 
 1. [Agent 总览](goals/20-agent-overview.md)
 2. [Writing Context Pack](goals/21-writing-context-pack.md)
@@ -121,7 +137,7 @@ flowchart LR
 6. [Agent 与 Memory 回写](goals/25-agent-memory-writeback.md)
 7. [Agent Review Policy](goals/26-agent-review-policy.md)
 
-## 8. 当前方案的收敛判断
+## 9. 当前方案的收敛判断
 
 Sextant Agent 的第一版应保持克制：
 
@@ -132,13 +148,13 @@ Agent 推演角色自然行动
   ↓
 Agent 生成下一步候选
   ↓
-Agent 自检风险
+Agent 自检草稿风险，产生 AgentReviewFinding
   ↓
 作者接受或修改
   ↓
 接受文本才进入 SourceDelta
   ↓
-Memory 增量回写
+Memory 增量回写，并由 Conflict Policy Gate 产生正式 ReviewItem
 ```
 
 这套设计的核心不是让 AI 替作者完成小说，而是让 AI 在长期写作中拥有稳定记忆、角色约束、POV 约束和作者主权。
