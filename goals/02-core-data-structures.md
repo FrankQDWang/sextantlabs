@@ -223,8 +223,19 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | entity_type | character / location / object / faction / lore / plotline / other |
 | display_name | 展示名 |
 | canonical_status | canon / draft / provisional / discarded / contradicted |
+| cast_tier | local_extra / minor_supporting / recurring / major / unknown；仅适用于 character |
 | first_seen_scene_id | 首次出现 |
 | description | 简述 |
+
+`cast_tier` 表示角色在当前作品 cast 中的叙事重要性，不是 canon 状态。它不能替代 `canonical_status`。
+
+| cast_tier | 含义 | Memory 落点 |
+|---|---|---|
+| local_extra | 一次性场景人物 | 可只保留 Mention / SourceSpan，不一定建 MemoryPage |
+| minor_supporting | 小配角或可能再出现的人物 | 可建轻量 MemoryPage |
+| recurring | 反复出现并影响局部情节 | Character MemoryPage + 简版 Agency Profile |
+| major | 影响主线、主题、长期关系或核心秘密 | Character MemoryPage + 完整 Agency Profile，通常需作者确认 |
+| unknown | 暂未判断 | 默认状态 |
 
 ## 13. EventCandidate
 
@@ -325,6 +336,16 @@ RawSource 的规范化处理视图。它可重建，不是最终证据源。
 | contradictions | 已知矛盾 |
 | source_refs | 证据引用 |
 | canon_status | current / proposed / disputed / deprecated |
+| memory_depth | none / light / standard / full；用于控制角色页维护深度 |
+
+`memory_depth` 是页面维护深度，不是 canon 状态。典型映射：
+
+| cast_tier | memory_depth |
+|---|---|
+| local_extra | none 或 light |
+| minor_supporting | light |
+| recurring | standard |
+| major | full |
 
 ## 19. ReviewItem
 
