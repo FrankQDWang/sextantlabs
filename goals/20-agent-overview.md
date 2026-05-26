@@ -4,7 +4,7 @@
 
 ## 1. 定位
 
-Sextant Agent 是一个 **Memory-grounded、Character-driven、Page-by-page** 的写作副驾驶。
+Sextant Agent 是一个 **Memory-grounded、Character-driven、Storytelling-controlled、Page-by-page** 的写作副驾驶。
 
 它的目标不是替作者一次性生成完整小说，而是帮助作者在当前场景、当前 POV、当前 canon 和角色状态约束下，推进下一小步。
 
@@ -24,7 +24,7 @@ Sextant 第一版不把“生成完整大纲”作为核心能力。
 | plot 驱动角色行动 | 角色状态驱动下一步动作 |
 | 容易提前锁死剧情 | 允许角色在约束内带来意外 |
 | 容易生成“剧情摘要感”文本 | 关注当前页的语言、动作、情绪和转折 |
-| 需要强全局规划 | 需要稳定 Memory 和局部推演 |
+| 需要强全局规划 | 需要稳定 Memory、局部推演和 storytelling control |
 
 Sextant 更接近逐页写作：写当前页，打磨当前页，接受当前页，再让它成为下一页的记忆基础。
 
@@ -34,10 +34,11 @@ Sextant 更接近逐页写作：写当前页，打磨当前页，接受当前页
 |---|---|---|---|
 | Build Writing Context Pack | 当前章节、场景、POV、作者意图 | WritingContextPack | 整理当前写作所需记忆 |
 | Character Agency Pass | ContextPack、角色记忆 | 角色下一步动因 | 不直接写正文，只推演角色行为 |
-| Suggest Next Beat | Agency Pass | 1-5 个下一步方向 | 给作者选择方向 |
-| Draft Next Passage | 选定 beat、ContextPack | DraftCandidate | 生成下一小段正文 |
-| Rewrite Current Page | 当前文本、ContextPack | DraftCandidate | 打磨当前页，不推进剧情 |
-| Agent Review | DraftCandidate、Memory | AgentReviewFinding / Revision Notes | 检查 POV、canon、角色、风险；不创建正式 ReviewItem |
+| Storytelling Control Layer | Agency、Context、当前文本 | RoleSlot、DramaticBehaviorPlan、ProseRenderingContract | 控制 cast、戏剧化和 prose 形式 |
+| Suggest Next Beat | ProseRenderingContract | 1-5 个下一步方向 | 给作者选择方向 |
+| Draft Next Passage | 选定 beat、Contract | DraftCandidate | 生成下一小段正文 |
+| Rewrite Current Page | 当前文本、Contract | DraftCandidate | 打磨当前页，不推进剧情 |
+| Agent Review | DraftCandidate、Memory | AgentReviewFinding / Revision Notes | 检查 POV、canon、角色、storytelling 风险；不创建正式 ReviewItem |
 | Accept to Memory | 作者接受的文本 | SourceDelta | 进入 Memory 增量回写 |
 
 ## 4. 主循环
@@ -46,14 +47,14 @@ Sextant 更接近逐页写作：写当前页，打磨当前页，接受当前页
 flowchart TD
     A[Author Position\n当前章节 / 场景 / POV] --> B[Writing Context Pack]
     B --> C[Character Agency Pass]
-    C --> D[Next Beat Options]
-    D --> E{作者选择}
-    E -->|要方向| F[Suggest Next Beat]
-    E -->|要正文| G[Draft Next Passage]
-    E -->|要打磨| H[Rewrite Current Page]
-    F --> I[DraftCandidate / BeatCandidate]
-    G --> I
-    H --> I
+    C --> D[Storytelling Control Layer]
+    D --> E[Role Need / Cast Expansion]
+    D --> F[Dramatic Behavior Plan]
+    D --> G[Prose Rendering Contract]
+    E --> H[Next Beat / Draft / Rewrite]
+    F --> H
+    G --> H
+    H --> I[DraftCandidate / BeatCandidate]
     I --> J[Agent Review\nAgentReviewFinding]
     J --> K{作者接受?}
     K -->|否| L[修改 / 重写 / 换方向]
@@ -70,6 +71,7 @@ flowchart TD
 | 动作 | Agent 是否可做 | 说明 |
 |---|---:|---|
 | 读取 Memory | 是 | 通过 Writing Context Pack 获取必要上下文 |
+| 判断是否需要新角色功能 | 是 | 通过 Role Need / Cast Expansion，结果仍是草稿层 |
 | 生成候选文本 | 是 | 生成 DraftCandidate，不是 canon |
 | 自检风险 | 是 | 产生 AgentReviewFinding / Revision Notes，不产生正式 ReviewItem |
 | 直接改 Current Canon | 否 | 必须走 Memory 的 Conflict Policy Gate |
@@ -88,7 +90,9 @@ Sextant Agent 第一版不做：
 - 自动解决所有 ReviewItem；
 - 自动把模型自创设定写入 Memory；
 - 在没有 SourceDelta / SourceSpan 的情况下创建正式 ReviewItem；
-- 把写作过程变成无作者确认的闭环。
+- 把写作过程变成无作者确认的闭环；
+- 把角色内心状态直接平铺成说明文；
+- 因为 Memory 中已有角色就强行复用旧角色。
 
 ## 7. Agent 工作单元
 
@@ -108,6 +112,7 @@ Sextant Agent 第一版不做：
 ```text
 Memory grounds the Agent.
 Characters drive the movement.
+Storytelling Control gives dramatic form.
 Author controls canon.
 ```
 
@@ -116,6 +121,7 @@ Author controls canon.
 ```text
 Memory 提供约束。
 角色推动行动。
+故事讲述控制层提供戏剧形式。
 作者决定 canon。
 ```
 
