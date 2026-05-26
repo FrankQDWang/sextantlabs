@@ -43,8 +43,8 @@ sequenceDiagram
     Pack->>Agency: 当前角色状态和场景压力
     Agency->>Story: 角色自然行动候选
     Story->>Story: Role Need / Scene Mode / Dramatic Form
-    Story->>Agent: 可写的 next beat options
-    Agent->>Author: 返回 1-5 个 Next Beat
+    Story->>Agent: RoleSlot / CharacterCastingDecision / SceneSequelMode / ProseRenderingContract
+    Agent->>Author: 返回 1-5 个 BeatCandidate
 ```
 
 BeatCandidate 结构：
@@ -58,7 +58,7 @@ BeatCandidate 结构：
 | storytelling_rationale | 为什么这个 beat 有故事推进、冲突或转折 |
 | cast_decision | 是否复用旧角色或创建新角色 |
 | tension | 该 beat 制造的张力 |
-| draft_local_risk | 是否可能冲突、泄露、偏离 POV、过度复用 cast |
+| agent_review_findings | 可能的 AgentReviewFinding 列表，risk_type 使用 [26-agent-review-policy.md](26-agent-review-policy.md) |
 | memory_refs | 相关 MemoryPage / CanonicalEvent / SourceSpan |
 
 ## 4. Draft Next Passage
@@ -84,7 +84,7 @@ Draft Next Passage 生成下一小段正文。它必须遵守 Writing Context Pa
 | DraftCandidate | 候选正文 |
 | rationale | 为什么这样写 |
 | used_context | 使用了哪些记忆和 contract |
-| agent_review_findings | AgentReviewFinding / DraftRisk，不是正式 ReviewItem |
+| agent_review_findings | AgentReviewFinding，不是正式 ReviewItem |
 | revision_options | 可选修改方向 |
 
 ## 5. Rewrite Current Page
@@ -165,7 +165,7 @@ flowchart TD
 | base_hash | 生成时目标文本的基线 hash |
 | memory_used | 使用了哪些 Memory 对象 |
 | evidence_refs | 关键证据引用 |
-| storytelling_outputs | RoleSlot、CastingDecision、DramaticBehaviorPlan、ProseContract 摘要 |
+| storytelling_outputs | RoleSlot、CharacterCastingDecision、SceneSequelMode、DramaticBehaviorPlan、ProseRenderingContract 摘要 |
 | agent_review_findings | 草稿阶段风险说明，不是正式 ReviewItem |
 | author_options | 作者可以接受、部分接受、修改、重写或换方向 |
 
