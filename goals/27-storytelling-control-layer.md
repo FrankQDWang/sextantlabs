@@ -64,7 +64,37 @@ PR #3 引入的对象和风险必须使用统一名称。
 | 草稿风险检查 | Agent Review | `AgentReviewFinding` | 否 |
 | 作者接受后回写 | Memory ingest | `SourceDelta`、`ReviewItem`、Memory updates | 是 |
 
-## 5. Storytelling Control Layer 的输入
+## 5. Execution Profiles
+
+Storytelling Control Layer 不一定每次都全量运行。它可以根据写作请求选择 full 或 light path，但仍必须产出足够的 ProseRenderingContract。
+
+| Profile | 适用场景 | 运行模块 | 说明 |
+|---|---|---|---|
+| full_storytelling | 继续写下一段 / 新 beat / 新场景推进 | Role Need、Cast Expansion、SceneSequelMode、DramaticBehaviorPlan、ProseRenderingContract | 默认路径，用于真正推进故事 |
+| rewrite_light | 打磨当前页、重写一小段 | DramaticBehaviorPlan、ProseRenderingContract，可跳过 Role Need | 不新增角色，不重新规划 cast |
+| line_polish | 只调整一句话、语气、节奏 | Style constraints、POV hard rules、ProseRenderingContract 最小版 | 不运行 Role Need 和 SceneSequelMode，除非发现风险 |
+| risk_review_only | 只检查候选风险 | Agent Review + relevant contract checks | 不生成新 DraftCandidate |
+
+### Profile 选择规则
+
+```mermaid
+flowchart TD
+    A[Author Intent] --> B{是否推进新剧情?}
+    B -->|是| C[full_storytelling]
+    B -->|否| D{是否重写当前页?}
+    D -->|是| E[rewrite_light]
+    D -->|否| F{是否只改一句或局部风格?}
+    F -->|是| G[line_polish]
+    F -->|否| H[risk_review_only]
+```
+
+轻量路径不代表绕过约束：
+
+- `rewrite_light` 仍必须遵守 POV、forbidden knowledge、canon、target range 和 base_hash。
+- `line_polish` 不能引入新事实、新角色或新事件。
+- 如果轻量路径发现 cast、POV、canon 或 scene structure 风险，应升级到 `full_storytelling` 或返回 AgentReviewFinding。
+
+## 6. Storytelling Control Layer 的输入
 
 | 输入 | 来源 | 用途 |
 |---|---|---|
@@ -75,7 +105,7 @@ PR #3 引入的对象和风险必须使用统一名称。
 | Open ReviewItem | Memory | 避免扩大已知风险 |
 | Proposed / Disputed Context | Memory Risk 区 | 只能作为注意事项，不能当作 canon |
 
-## 6. Storytelling Control Layer 的输出
+## 7. Storytelling Control Layer 的输出
 
 | 输出 | 说明 | 下游用途 |
 |---|---|---|
@@ -86,7 +116,7 @@ PR #3 引入的对象和风险必须使用统一名称。
 | DramaticBehaviorPlan | 把内心状态转成动作、对话、选择、沉默 | 防止流水账 |
 | ProseRenderingContract | 最终写作约束 | 控制 prose 输出 |
 
-## 7. 总体流程
+## 8. 总体流程
 
 ```mermaid
 sequenceDiagram
@@ -100,8 +130,9 @@ sequenceDiagram
 
     Pack->>Agency: 提供 canon、POV、角色状态
     Agency->>Story: 角色自然行动候选
-    Story->>Story: 检测角色功能需求
-    Story->>Story: 判断 scene / sequel mode
+    Story->>Story: 选择 execution profile
+    Story->>Story: 检测角色功能需求（full path）
+    Story->>Story: 判断 scene / sequel mode（full path）
     Story->>Story: 把内心状态转成戏剧化行为
     Story->>Story: 生成 ProseRenderingContract
     Story->>Agent: 提供控制产物
@@ -110,7 +141,7 @@ sequenceDiagram
     Author->>Memory: 接受文本才进入 SourceDelta
 ```
 
-## 8. 它不是什么
+## 9. 它不是什么
 
 Storytelling Control Layer 不是：
 
@@ -125,7 +156,7 @@ Storytelling Control Layer 不是：
 
 它只是当前写作小步的中间控制层。
 
-## 9. 与 Memory 的关系
+## 10. 与 Memory 的关系
 
 Storytelling Control Layer 消费 Memory，但不写 Memory。
 
@@ -143,7 +174,7 @@ flowchart LR
 
 它可以提出 `NewCharacterSeed`，但不能直接创建正式 Character MemoryPage。只有当作者接受包含新角色的文本后，Memory ingest 才能决定如何记录该角色。
 
-## 10. AgentReviewFinding 的新增风险类型
+## 11. AgentReviewFinding 的新增风险类型
 
 Storytelling Control Layer 产生的风险仍属于草稿层，不是正式 ReviewItem。所有 risk_type 以 [26-agent-review-policy.md](26-agent-review-policy.md) 第 4 节为唯一 source-of-truth。
 
@@ -158,7 +189,7 @@ Storytelling Control Layer 产生的风险仍属于草稿层，不是正式 Revi
 | scene_mode_risk | scene / sequel 节奏混乱 | 否 |
 | prose_contract_violation | 违反当前 ProseRenderingContract | 否，除非涉及 POV / canon |
 
-## 11. 核心原则
+## 12. 核心原则
 
 ```text
 Memory gives facts.
@@ -176,7 +207,7 @@ Storytelling Control 给戏剧形式。
 Next Page Agent 根据戏剧形式写候选。
 ```
 
-## 12. 结论
+## 13. 结论
 
 Storytelling Control Layer 是 Sextant Agent 从“知道角色想什么”走向“能写成故事”的关键层。
 
