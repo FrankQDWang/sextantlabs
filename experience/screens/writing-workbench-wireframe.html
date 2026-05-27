@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Sextant Writing Workbench Wireframe</title>
+<style>
+  body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:#f6f6f4; color:#222; }
+  .top { height:48px; display:flex; align-items:center; gap:16px; padding:0 18px; border-bottom:1px solid #ddd; background:#fff; }
+  .app { display:grid; grid-template-columns: 240px 1fr 280px; height: calc(100vh - 230px); }
+  aside, main { border-right:1px solid #ddd; padding:16px; overflow:auto; }
+  .memory { background:#fafafa; }
+  .agent { background:#fbfbff; }
+  .editor { background:#fff; line-height:1.8; font-size:16px; }
+  .muted { color:#777; font-size:12px; }
+  .card { border:1px solid #ddd; border-radius:10px; padding:12px; margin:10px 0; background:#fff; }
+  .btn { display:inline-block; padding:6px 10px; border:1px solid #bbb; border-radius:8px; margin:4px 4px 0 0; font-size:12px; background:#fff; }
+  .primary { background:#222; color:white; border-color:#222; }
+  .drawer { height:180px; border-top:1px solid #ddd; padding:14px 18px; background:#fff; display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; }
+  .badge { font-size:11px; padding:2px 6px; border-radius:999px; background:#eee; margin-right:4px; }
+  .risk { background:#fff3cd; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <strong>Sextant</strong>
+    <span class="muted">Project: Harbor Nine</span>
+    <span class="muted">Chapter 3</span>
+    <span class="muted">POV: Mira</span>
+  </div>
+
+  <div class="app">
+    <aside class="memory">
+      <h3>Memory</h3>
+      <div class="card">
+        <div class="muted">Current POV</div>
+        <strong>Mira</strong>
+      </div>
+      <div class="card">
+        <div class="muted">Open Threads</div>
+        <p>Lantern Map is missing.</p>
+      </div>
+      <div class="card">
+        <span class="badge risk">risk</span> Kestrel ownership is proposed.
+      </div>
+    </aside>
+
+    <main class="editor">
+      <h2>Chapter 3</h2>
+      <p>Mira pushed the empty map case across the table. Kestrel looked at it, then at the door.</p>
+      <p>“You were near the west archive last night,” she said.</p>
+      <p class="muted">Cursor here...</p>
+    </main>
+
+    <aside class="agent">
+      <h3>Agent</h3>
+      <div class="card">
+        <div class="btn primary">Give next beats</div>
+        <div class="btn">Rewrite selection</div>
+        <div class="btn">Render beat</div>
+        <div class="btn">Check risk</div>
+        <div class="btn">Ask memory</div>
+      </div>
+      <div class="card">
+        <div class="muted">Controls</div>
+        <p>Length: short<br/>New character: local extra allowed<br/>Inner thoughts: low</p>
+      </div>
+    </aside>
+  </div>
+
+  <section class="drawer">
+    <div class="card">
+      <strong>Candidate A</strong>
+      <p>Mira deliberately names the wrong archive. Kestrel corrects one detail too fast.</p>
+      <span class="badge">low risk</span>
+      <div><span class="btn primary">Accept</span><span class="btn">Partial</span><span class="btn">Why?</span></div>
+    </div>
+    <div class="card">
+      <strong>Candidate B</strong>
+      <p>Orrin interrupts, but only with an observable action. No inner access.</p>
+      <span class="badge risk">POV caution</span>
+      <div><span class="btn">Accept</span><span class="btn">Partial</span><span class="btn">Why?</span></div>
+    </div>
+    <div class="card">
+      <strong>Candidate C</strong>
+      <p>A scene-local clerk appears as gatekeeper, widening the world without changing canon.</p>
+      <span class="badge">new local extra</span>
+      <div><span class="btn">Accept</span><span class="btn">Partial</span><span class="btn">Why?</span></div>
+    </div>
+  </section>
+</body>
+</html>
