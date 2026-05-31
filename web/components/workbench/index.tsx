@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, type CSSProperties } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { TopBar } from "./top-bar"
 import { Editor } from "./editor"
 import { SceneCard } from "./scene-card"
@@ -26,9 +26,6 @@ export function Workbench() {
   const [reviewOpen, setReviewOpen] = useState(false)
   const [acceptedSentence, setAcceptedSentence] = useState<string | null>(null)
   const [demoHighlight, setDemoHighlight] = useState(false)
-  const workbenchStyle = {
-    "--candidate-drawer-height": "14rem",
-  } as CSSProperties
 
   const closeAll = useCallback(() => {
     setSelection(null)
@@ -116,7 +113,7 @@ export function Workbench() {
   )
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background" style={workbenchStyle}>
+    <div className="flex h-screen flex-col overflow-hidden bg-background">
       <TopBar
         onAskOpen={() => setAskOpen(true)}
         reviewItems={reviewItems}
@@ -126,7 +123,7 @@ export function Workbench() {
 
       {/* 主体：编辑器为绝对主角，右侧场景小卡为辅 */}
       <div className="flex min-h-0 flex-1">
-        <div className="relative flex min-w-0 flex-1 flex-col">
+        <div className="relative flex min-w-0 flex-1 flex-col [--editor-column:576px] [--editor-gutter:2rem]">
           <Editor
             onSelect={handleSelect}
             demoHighlight={demoHighlight}
@@ -141,7 +138,6 @@ export function Workbench() {
           <StateSwitcher
             value={resolveDemo({ selection, drawerOpen, askOpen, writebackOpen, reviewOpen, acceptedSentence })}
             onChange={goToDemo}
-            raised={drawerOpen}
           />
         </div>
         <SceneCard onUseDirection={() => setDrawerOpen(true)} />

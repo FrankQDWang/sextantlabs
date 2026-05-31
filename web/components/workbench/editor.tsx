@@ -39,8 +39,8 @@ export function Editor({ onSelect, demoHighlight, acceptedSentence }: EditorProp
   }
 
   return (
-    <div className="prose-editor relative flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-[640px] px-8 py-14">
+    <div className="prose-editor relative flex-1 overflow-y-auto px-[var(--editor-gutter)] py-14">
+      <div className="mx-auto max-w-[var(--editor-column)]">
         {/* 章节标题区 — 安静、克制 */}
         <div className="mb-10">
           <p className="mb-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground/70">
