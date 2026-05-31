@@ -29,7 +29,7 @@ export function CandidateDrawer({ onClose, onAcceptSentence }: CandidateDrawerPr
   const active = candidates.find((c) => c.id === activeId)!
 
   return (
-    <div className="animate-slide-up shrink-0 border-t border-border bg-card">
+    <div className="animate-slide-up h-[var(--candidate-drawer-height)] shrink-0 overflow-hidden border-t border-border bg-card">
       {/* 抽屉头 */}
       <div className="flex items-center justify-between border-b border-border px-4 py-2">
         <div className="flex items-center gap-2">
