@@ -122,7 +122,19 @@ type ProposedThreadUpdate = {
 ```ts
 type ProposedReviewItem = {
   kind: "proposed_review_item"
-  review_type: "continuity_warning" | "canon_conflict" | "pov_leak" | "over_inference" | "alias_risk"
+  review_type:
+    | "alias_conflict"
+    | "event_merge_conflict"
+    | "state_conflict"
+    | "object_state_conflict"
+    | "knowledge_conflict"
+    | "pov_conflict"
+    | "timeline_conflict"
+    | "relationship_conflict"
+    | "canon_conflict"
+    | "version_conflict"
+    | "source_scope_conflict"
+    | "continuity_warning"
   description: string
   source_span_refs: SourceSpanRef[]
   severity: "low" | "medium" | "high"
@@ -132,7 +144,7 @@ type ProposedReviewItem = {
 
 用于承接不确定、冲突、过度推断和可能穿帮的内容。
 
-`ProposedReviewItem` 不等于正式 `ReviewItem`；正式 `ReviewItem` 仍由 Memory 的 conflict policy / review policy 产生。
+`ProposedReviewItem.review_type` 使用 [../goals/18-conflict-policy.md](../goals/18-conflict-policy.md) 中的正式 `ReviewItem.review_type` 白名单。`ProposedReviewItem` 不等于正式 `ReviewItem`；正式 `ReviewItem` 仍由 Memory 的 conflict policy / review policy 产生。
 
 ## 4. 分层写入
 
