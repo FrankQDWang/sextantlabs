@@ -1,8 +1,8 @@
-# Sextant 工程实现技术设计
+# 00. 工程实现总览
 
 > 本文档定义 Sextant 从现有产品体验契约、Memory 宏观设计和 Agent 宏观设计进入工程实现阶段时的技术设计。
 >
-> 本文是技术设计，不是执行计划、任务拆分或里程碑排期。后续实施可以另开 planning 文档，但不得在计划文档中重新定义本文的工程边界、source-of-truth 顺序、AI coding 围栏或 CI/CD 质量门。
+> 本文是 `implementation/` 的总览，不是执行计划、任务拆分或里程碑排期。后续实施可以另开 planning 文档，但不得在计划文档中重新定义本文的工程边界、source-of-truth 顺序、AI coding 围栏或 CI/CD 质量门。
 
 ## 1. 设计定位
 
@@ -226,16 +226,23 @@ sextantlabs/
   goals/
   experience/
 
-  docs/
-    adr/
-    tech-design/
-      engineering-implementation-design.md
-      module-boundaries.md
-      ci-cd-and-csab.md
-      ai-coding-guardrails.md
-      persistence-schema.md
-      llm-harness.md
-      frontend-integration.md
+  implementation/
+    README.md
+    00-overview.md
+    01-source-of-truth-map.md
+    02-module-boundaries.md
+    03-persistence-schema.md
+    04-domain-state-machines.md
+    05-application-use-cases.md
+    06-story-skills-and-llm-harness.md
+    07-agent-and-storytelling-control.md
+    08-api-contracts.md
+    09-frontend-integration.md
+    10-worker-and-jobs.md
+    11-ci-cd-and-ai-guardrails.md
+    12-observability-security-ops.md
+    13-acceptance-matrix.md
+    14-implementation-pr-stack.md
 
   web/
     package.json
@@ -277,7 +284,7 @@ sextantlabs/
     CODEOWNERS
 ```
 
-`goals/` 和 `experience/` 继续作为产品、Memory 和 Agent 逻辑设计源；`docs/tech-design/` 承接工程实现设计；`backend/` 和 `web/` 承接实现代码。
+`goals/` 和 `experience/` 继续作为产品、Memory 和 Agent 逻辑设计源；`implementation/` 承接工程实现规格；`backend/` 和 `web/` 承接实现代码。
 
 ## 5. 技术栈设计
 
@@ -765,17 +772,25 @@ End-to-end tests 覆盖最小用户旅程：作者选中一段文本，发起 Ac
 14. AgentReviewFinding 不等于正式 ReviewItem。
 15. 模型建议不能自动成为 canon。
 
-## 18. 后续设计文档边界
+## 18. 实现规格文档边界
 
-本文档定义工程实现技术设计。后续可以新增以下文档，但不得与本文冲突：
+本文档定义工程实现总览。以下同级文档补齐可执行实现规格，但不得与本文冲突：
 
 ```text
-docs/adr/*.md
-docs/tech-design/module-boundaries.md
-docs/tech-design/ci-cd-and-csab.md
-docs/tech-design/persistence-schema.md
-docs/tech-design/llm-harness.md
-docs/tech-design/frontend-integration.md
+implementation/01-source-of-truth-map.md
+implementation/02-module-boundaries.md
+implementation/03-persistence-schema.md
+implementation/04-domain-state-machines.md
+implementation/05-application-use-cases.md
+implementation/06-story-skills-and-llm-harness.md
+implementation/07-agent-and-storytelling-control.md
+implementation/08-api-contracts.md
+implementation/09-frontend-integration.md
+implementation/10-worker-and-jobs.md
+implementation/11-ci-cd-and-ai-guardrails.md
+implementation/12-observability-security-ops.md
+implementation/13-acceptance-matrix.md
+implementation/14-implementation-pr-stack.md
 ```
 
 执行计划、PR 顺序、任务拆分、排期应放在单独 planning 文档中，不放在本文档中。
