@@ -52,7 +52,18 @@ DraftCandidate ≠ Manuscript Text ≠ SourceDelta ≠ SourceSpan ≠ Memory ≠
 | [05-review-and-risk-contract.md](05-review-and-risk-contract.md) | AgentReviewFinding、ReviewItem、风险等级和非阻塞处理 |
 | [06-conversational-entry-contract.md](06-conversational-entry-contract.md) | 对话式 Agent 作为入口，而不是产品主体 |
 
-## 3. 不在本目录解决的问题
+## 3. 命名边界
+
+内部对象名和枚举以 `goals/` 为准。尤其是：
+
+| 内部命名 | 唯一来源 |
+|---|---|
+| `AgentReviewFinding.risk_type` | [../goals/26-agent-review-policy.md](../goals/26-agent-review-policy.md) |
+| `ReviewItem.review_type` | [../goals/18-conflict-policy.md](../goals/18-conflict-policy.md) |
+
+`experience/` 可以定义产品动作、展示方式和作者可见文案，但不维护第二套风险枚举。比如界面可以显示“这里可能把暗示写得太实”，内部仍应使用 `unresolved_risk`、`canon_risk` 或对应的正式 `ReviewItem.review_type`。
+
+## 4. 不在本目录解决的问题
 
 - 最终 UI layout；
 - 组件视觉样式；

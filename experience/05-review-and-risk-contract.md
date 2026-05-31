@@ -29,19 +29,43 @@ type AgentReviewFinding = {
   action_request_id: string
   candidate_id?: string
   risk_type:
-    | "pov_leak"
-    | "canon_conflict_possible"
-    | "over_inference"
-    | "unearned_reveal"
-    | "thread_closure_risk"
-    | "style_or_tone_mismatch"
-    | "character_agency_mismatch"
+    | "pov_risk"
+    | "knowledge_risk"
+    | "canon_risk"
+    | "unresolved_risk"
+    | "continuity_risk"
+    | "forbidden_knowledge_leak"
+    | "non_pov_mind_reading"
+    | "target_range_risk"
+    | "character_risk"
+    | "agency_break_risk"
+    | "control_risk"
+    | "cast_reuse_risk"
+    | "cast_creation_risk"
+    | "cast_focus_risk"
+    | "cast_complexity_risk"
+    | "cast_policy_violation"
+    | "style_risk"
+    | "exposition_risk"
+    | "dramatization_risk"
+    | "inner_state_overload"
+    | "telling_over_action"
+    | "subtext_missing"
+    | "choice_missing"
+    | "scene_mode_risk"
+    | "sequel_mode_risk"
+    | "mode_mixing_risk"
+    | "no_turn_risk"
+    | "prose_contract_violation"
+    | "inner_state_budget_violation"
   severity: "low" | "medium" | "high"
   description: string
   suggested_fix?: string
   memory_refs?: SourceSpanRef[]
 }
 ```
+
+`risk_type` 的唯一内部白名单以 [../goals/26-agent-review-policy.md](../goals/26-agent-review-policy.md) 为准。本文只定义产品体验如何展示和处理这些风险，不维护第二套枚举。
 
 边界：
 
@@ -62,15 +86,20 @@ type ReviewItem = {
   id: string
   source_span_refs: SourceSpanRef[]
   review_type:
+    | "alias_conflict"
+    | "event_merge_conflict"
+    | "state_conflict"
+    | "object_state_conflict"
+    | "knowledge_conflict"
+    | "pov_conflict"
+    | "timeline_conflict"
+    | "relationship_conflict"
     | "canon_conflict"
+    | "version_conflict"
+    | "source_scope_conflict"
     | "continuity_warning"
-    | "pov_leak"
-    | "alias_risk"
-    | "over_inference"
-    | "thread_state_conflict"
-    | "knowledge_state_conflict"
   severity: "low" | "medium" | "high"
-  status: "open" | "accepted" | "dismissed" | "resolved" | "superseded"
+  status: "open" | "dismissed" | "resolved" | "superseded"
   blocks_promotion: boolean
   description: string
   proposed_resolution?: string
@@ -78,6 +107,8 @@ type ReviewItem = {
 ```
 
 只有在 Memory 回写阶段，且存在可追溯 `SourceSpan` 时，才应该生成正式 `ReviewItem`。
+
+`review_type` 的唯一内部白名单以 [../goals/18-conflict-policy.md](../goals/18-conflict-policy.md) 为准。产品界面可以把这些类型翻译成更自然的写作语言。
 
 ## 4. 风险等级
 
@@ -89,7 +120,7 @@ type ReviewItem = {
 
 ## 5. 风险类型
 
-### 5.1 POV 泄漏
+### 5.1 POV / 角色认知风险
 
 当前 POV 角色知道了不该知道的信息，或叙述越过当前视角。
 
@@ -99,7 +130,12 @@ type ReviewItem = {
 Mira 尚不知道钥匙来自敌人，但叙述直接写出“那把敌人给他的钥匙”。
 ```
 
-### 5.2 过度推断
+对应内部类型：
+
+- 草稿层：`pov_risk` / `knowledge_risk` / `forbidden_knowledge_leak` / `non_pov_mind_reading`
+- Memory 层：`pov_conflict` / `knowledge_conflict`
+
+### 5.2 过度推断 / 未证实内容
 
 正文只提供暗示，但系统准备写成确定事实。
 
@@ -110,21 +146,46 @@ Mira 尚不知道钥匙来自敌人，但叙述直接写出“那把敌人给他
 错误写入：Kestrel 背叛了 Mira。
 ```
 
-### 5.3 悬念误关闭
+对应内部类型：
+
+- 草稿层：`unresolved_risk` / `canon_risk`
+- Memory 层：通常映射为 `source_scope_conflict` / `canon_conflict` / `continuity_warning`
+
+### 5.3 悬念误关闭 / 叙事债处理风险
 
 正文保持悬念开放，但系统准备把线索结论化或关闭伏笔。
+
+对应内部类型：
+
+- 草稿层：`unresolved_risk` / `control_risk` / `no_turn_risk`
+- Memory 层：通常映射为 `continuity_warning`
 
 ### 5.4 角色动机不一致
 
 候选行为不符合当前角色欲望、恐惧、边界、压力或认知状态。
 
+对应内部类型：
+
+- 草稿层：`character_risk` / `agency_break_risk`
+- Memory 层：通常不提升为正式 `ReviewItem`，除非接受后造成事实或连续性冲突
+
 ### 5.5 Canon 冲突
 
 新正文与已确认 MemoryPage / Current Canon 冲突。
 
-### 5.6 Alias 风险
+对应内部类型：
+
+- 草稿层：`canon_risk` / `continuity_risk`
+- Memory 层：`canon_conflict` / `state_conflict` / `timeline_conflict` / `object_state_conflict` / `relationship_conflict`
+
+### 5.6 Alias / 事件合并风险
 
 提及、别名或身份映射不确定，可能把两个角色、物品或身份错误合并。
+
+对应内部类型：
+
+- 草稿层：`unresolved_risk` / `continuity_risk`
+- Memory 层：`alias_conflict` / `event_merge_conflict`
 
 ## 6. 非阻塞策略
 
@@ -173,11 +234,11 @@ flowchart TD
 
 | 内部风险 | 面向作者表达 |
 |---|---|
-| pov_leak | 这里可能让角色知道了她不该知道的事 |
-| over_inference | 这里可能把暗示写得太实 |
-| thread_closure_risk | 这里可能提前关闭一个悬念 |
+| pov_risk / knowledge_risk | 这里可能让角色知道了她不该知道的事 |
+| unresolved_risk / canon_risk | 这里可能把暗示写得太实 |
+| unresolved_risk / control_risk | 这里可能提前关闭一个悬念 |
 | canon_conflict | 这里和之前确认的设定冲突 |
-| alias_risk | 这里可能把两个身份误认为同一个人 |
-| character_agency_mismatch | 这个行动可能不像该角色自然会做的事 |
+| alias_conflict | 这里可能把两个身份误认为同一个人 |
+| character_risk / agency_break_risk | 这个行动可能不像该角色自然会做的事 |
 
 产品默认应该帮助作者继续写，而不是迫使作者理解风险枚举。
