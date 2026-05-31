@@ -1,5 +1,7 @@
 import { Workbench } from "@/components/workbench"
 
-export default function Page() {
+export function App() {
   return <Workbench />
 }
+
+export default App

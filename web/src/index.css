@@ -1,9 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --font-geist: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --font-geist-mono: 'Geist Mono', ui-monospace, monospace;
+  --font-noto-serif-sc: 'Noto Serif SC', Georgia, serif;
+
   /* Paper / quiet writing-desk theme — warm off-white, ink, terracotta accent. No blue/violet. */
   --background: oklch(0.971 0.006 83);        /* warm paper */
   --foreground: oklch(0.26 0.012 60);         /* soft ink */
