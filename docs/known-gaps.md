@@ -155,8 +155,7 @@ P0 可以先用 demo seed data，但最好补轻量状态：
 
 ```text
 Goal-ready docs: done in PR #7
-Web runbook/typecheck: to be added in PR #8
+Web runbook/typecheck/mock env: added in PR #8
 Local-first MVP implementation: not started
 Tests/e2e: not started
-Production backend: out of P0 scope
 ```
