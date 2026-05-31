@@ -34,7 +34,7 @@
 git diff --check -- AGENTS.md PLAN.md README.md docs implementation
 ```
 
-前端类变更将在 PR #8 中验证：
+前端类变更在 PR #8 中验证：
 
 ```bash
 pnpm --dir web lint
@@ -45,8 +45,8 @@ pnpm --dir web build
 ### 当前状态
 
 ```text
-Goal-ready documentation: complete for PR #7
-Web runbook and light validation scripts: pending for PR #8
+Goal-ready documentation: complete in PR #7
+Web runbook and light validation scripts: added in PR #8
 P0 local-first implementation: not started
 ```
 
