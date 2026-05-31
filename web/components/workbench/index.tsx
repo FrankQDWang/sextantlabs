@@ -126,7 +126,7 @@ export function Workbench() {
 
       {/* 主体：编辑器为绝对主角，右侧场景小卡为辅 */}
       <div className="flex min-h-0 flex-1">
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="relative flex min-w-0 flex-1 flex-col">
           <Editor
             onSelect={handleSelect}
             demoHighlight={demoHighlight}
@@ -138,6 +138,11 @@ export function Workbench() {
               onAcceptSentence={handleAcceptSentence}
             />
           )}
+          <StateSwitcher
+            value={resolveDemo({ selection, drawerOpen, askOpen, writebackOpen, reviewOpen, acceptedSentence })}
+            onChange={goToDemo}
+            raised={drawerOpen}
+          />
         </div>
         <SceneCard onUseDirection={() => setDrawerOpen(true)} />
       </div>
@@ -159,11 +164,6 @@ export function Workbench() {
         <MemoryWriteback onClose={() => setWritebackOpen(false)} onUndoAll={handleUndoAccept} />
       )}
 
-      <StateSwitcher
-        value={resolveDemo({ selection, drawerOpen, askOpen, writebackOpen, reviewOpen, acceptedSentence })}
-        onChange={goToDemo}
-        raised={drawerOpen}
-      />
     </div>
   )
 }

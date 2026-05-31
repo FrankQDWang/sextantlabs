@@ -21,7 +21,7 @@ interface StateSwitcherProps {
 export function StateSwitcher({ value, onChange, raised = false }: StateSwitcherProps) {
   return (
     <div
-      className={`fixed left-1/2 z-50 flex w-max -translate-x-1/2 items-center gap-0.5 whitespace-nowrap rounded-full border border-border bg-popover/90 p-1 shadow-lg shadow-foreground/5 backdrop-blur ${
+      className={`absolute left-1/2 z-50 flex w-max -translate-x-1/2 items-center gap-0.5 whitespace-nowrap rounded-full border border-border bg-popover/90 p-1 shadow-lg shadow-foreground/5 backdrop-blur ${
         raised ? "bottom-[var(--candidate-drawer-height)]" : "bottom-4"
       }`}
     >
