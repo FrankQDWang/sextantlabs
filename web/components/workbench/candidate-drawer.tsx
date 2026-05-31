@@ -7,7 +7,6 @@ import {
   Replace,
   Shuffle,
   FileSearch,
-  X,
   ChevronDown,
   Sparkles,
   ShieldAlert,

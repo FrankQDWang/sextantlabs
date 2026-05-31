@@ -15,11 +15,16 @@ const states: { id: DemoState; label: string }[] = [
 interface StateSwitcherProps {
   value: DemoState
   onChange: (s: DemoState) => void
+  raised?: boolean
 }
 
-export function StateSwitcher({ value, onChange }: StateSwitcherProps) {
+export function StateSwitcher({ value, onChange, raised = false }: StateSwitcherProps) {
   return (
-    <div className="fixed bottom-4 left-14 z-50 flex items-center gap-0.5 rounded-full border border-border bg-popover/90 p-1 shadow-lg shadow-foreground/5 backdrop-blur">
+    <div
+      className={`fixed left-14 z-50 flex items-center gap-0.5 rounded-full border border-border bg-popover/90 p-1 shadow-lg shadow-foreground/5 backdrop-blur transition-[bottom] duration-200 ease-out ${
+        raised ? "bottom-[15.25rem]" : "bottom-4"
+      }`}
+    >
       <span className="px-2 text-[10px] uppercase tracking-wide text-muted-foreground/70">演示</span>
       {states.map((s) => (
         <button

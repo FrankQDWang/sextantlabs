@@ -33,6 +33,7 @@ export function Workbench() {
     setAskOpen(false)
     setWritebackOpen(false)
     setReviewOpen(false)
+    setAcceptedSentence(null)
     setDemoHighlight(false)
   }, [])
 
@@ -155,7 +156,11 @@ export function Workbench() {
         <MemoryWriteback onClose={() => setWritebackOpen(false)} onUndoAll={handleUndoAccept} />
       )}
 
-      <StateSwitcher value={resolveDemo({ selection, drawerOpen, askOpen, writebackOpen, reviewOpen, acceptedSentence })} onChange={goToDemo} />
+      <StateSwitcher
+        value={resolveDemo({ selection, drawerOpen, askOpen, writebackOpen, reviewOpen, acceptedSentence })}
+        onChange={goToDemo}
+        raised={drawerOpen}
+      />
     </div>
   )
 }
