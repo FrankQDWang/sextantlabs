@@ -1,0 +1,29 @@
+{
+  "source_span_id": "00000000-0000-0000-0000-000000000101",
+  "scene_id": "00000000-0000-0000-0000-000000000201",
+  "text": "Mira and Orrin crossed the hall in silence. The narration stays outside both characters.",
+  "mentions": [
+    {
+      "raw_text": "Mira",
+      "mention_type": "character",
+      "canonical_entity_id": "00000000-0000-0000-0000-000000000301"
+    },
+    {
+      "raw_text": "Orrin",
+      "mention_type": "character",
+      "canonical_entity_id": "00000000-0000-0000-0000-000000000302"
+    }
+  ],
+  "expected_evidence_refs": [
+    {
+      "type": "source_span",
+      "id": "00000000-0000-0000-0000-000000000101"
+    }
+  ],
+  "expected_non_promotion": {
+    "creates_canon": false,
+    "creates_review_item": false,
+    "creates_memory_page": false,
+    "creates_graph_projection": false
+  }
+}

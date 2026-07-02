@@ -31,7 +31,7 @@
 
 | 源文档 | 工程落点 | 必须实现的最小边界 |
 |---|---|---|
-| `goals/13-skills-and-resolver.md` | `06-story-skills-and-llm-harness.md`, `10-worker-and-jobs.md` | thin harness + fat story skills，skill 不能直接 commit DB |
+| `goals/13-skills-and-resolver.md` | `06-story-skills-and-llm-harness.md`, `10-worker-and-jobs.md` | thin harness + rich skills；SkillRegistry/Resolver 是目标能力；prompt registry/provider adapters/SkillRun replay 只是基础设施；skill 不能直接 commit DB 或写 canon |
 | `goals/14-story-schema-packs.md` | `03-persistence-schema.md`, `06-story-skills-and-llm-harness.md` | Base schema、Genre Pack、Project Overrides 有版本化存储 |
 | `goals/15-event-aggregation.md` | `06-story-skills-and-llm-harness.md`, `03-persistence-schema.md` | EventCandidate -> CanonicalEvent -> FactAssertion 不能跳过 gate |
 | `goals/16-source-normalization.md` | `06-story-skills-and-llm-harness.md`, `03-persistence-schema.md` | ProcessedMarkdownView 可重建，必须保存 raw offset map ref |

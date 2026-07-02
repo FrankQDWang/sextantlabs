@@ -22,13 +22,21 @@ Sextant 是一个面向小说作者的 **外部长期记忆系统**：它把作�
 | Canon over Truth | 小说里不是客观 truth，而是当前 canon、角色认知、草稿状态 | [07-memory-pages.md](goals/07-memory-pages.md) |
 | Evidence/log before Canon | 新证据可以先入日志，Current Canon 必须经过 conflict gate | [17-incremental-memory-writeback.md](goals/17-incremental-memory-writeback.md)、[18-conflict-policy.md](goals/18-conflict-policy.md) |
 | Non-blocking correction | 用户可以改，但流程不因用户未确认而阻塞 | [05-mentions-aliases.md](goals/05-mentions-aliases.md) |
-| Deterministic when possible | 能用规则、已确认别名、结构信息完成的，不交给 LLM 判断 | [00-design-principles.md](goals/00-design-principles.md) |
+| Deterministic for structure and gates | 规则优先处理 schema、枚举、证据链、别名约束、状态转移和 review/canon gate；创作语义理解不能沉进本地词表或 prose regex | [00-design-principles.md](goals/00-design-principles.md)、[13-skills-and-resolver.md](goals/13-skills-and-resolver.md) |
 | Events as first-class memory | 小说是事件驱动的，事件应作为记忆节点 | [06-entities-events-facts.md](goals/06-entities-events-facts.md)、[15-event-aggregation.md](goals/15-event-aggregation.md) |
 | POV-aware memory | 续写和检查必须知道当前视角角色能知道什么 | [04-scenes-pov.md](goals/04-scenes-pov.md) |
 | Thin harness, fat story skills | 系统保持薄，领域流程沉淀为 Story Skills | [13-skills-and-resolver.md](goals/13-skills-and-resolver.md) |
 | Schema-constrained extraction | 通过 Story Schema Pack 限制实体、事件、关系类型 | [14-story-schema-packs.md](goals/14-story-schema-packs.md) |
 | Incremental writeback | 新增正文或引用材料应局部回写，而不是全量重抽 | [17-incremental-memory-writeback.md](goals/17-incremental-memory-writeback.md) |
 | Review, not hard stop | 冲突不阻断原始材料进入，只阻断高风险自动升格 | [18-conflict-policy.md](goals/18-conflict-policy.md) |
+
+### 2.1 创作语义边界
+
+Sextant 的确定性层负责稳定系统结构：SourceSpan、EvidenceLogEntry、Story Schema Pack、FactAssertion 状态、ReviewItem gate、CanonPromotion gate、MemoryPage rewrite policy 和 GraphProjection rebuild。
+
+确定性层不负责用自然语言词表理解小说正文。尤其不能把“通报、汇报、声明、报告、说法、消息、话”或英文 communication cue 扩展成一套本地 prose semantic parser。遇到需要判断叙事语义、角色认知、事件归并、POV 含义、戏剧化表达的地方，应由 Story Skill / provider 提出结构化候选，再由确定性 validator 检查 schema、证据边界、source ancestry、review policy 和 canon policy。
+
+Prompt registry 不是 Skill Registry。Prompt 文件、provider adapter、SkillRun audit 是有价值的基础设施，但不等于已经完成 thin harness + rich skills 架构。
 
 ## 3. 总体数据流（Canonical End-to-End Flow）
 
@@ -153,7 +161,17 @@ Sextant 记忆系统第一阶段不追求：
 19. [冲突策略与 Review Policy](goals/18-conflict-policy.md)
 20. [Story Auto-Link 与确定性建图](goals/19-story-auto-link.md)
 
-## 8. 当前方案的收敛判断
+## 8. 当前实现状态纠偏
+
+当前代码库已有一部分有意义基础设施：provider ports/adapters、prompt files、prompt hash locking、SkillRun persistence、replay-diff eval、worker handlers、SourceDelta/SourceSpan/EvidenceLogEntry/ReviewItem/MemoryPage/GraphProjection 的生产骨架。
+
+这些基础设施现在已经收敛为可执行 Story Skill 架构：仓库内已有 first-class SkillRegistry、`run_skill(skill_name, skill_version, input_object, runtime_context)` runtime、Resolver、可执行 skill document registry、Codex subagent judge eval rubric (eval only; not production authority)、真实语料 chapter/slice boundary eval、RRF keyword+embedding 融合和面向当前 scene/query 的 sliding-window 上下文组织。
+
+当前仍不能由本地仓库单独证明的，是 hosted proof、deployed smoke、deployed clean-context UI acceptance，以及绑定真实生产 provider/hosted 环境的外部证据。
+
+已写入 source pipeline 的本地 prose cue/regex 语义推断不是目标能力，应在后续代码/测试清理阶段删除，而不是继续扩展。
+
+## 9. 当前方案的收敛判断
 
 Sextant 的记忆系统应保持以下形态：
 

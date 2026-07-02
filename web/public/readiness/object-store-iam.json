@@ -1,0 +1,14 @@
+{
+  "deployment_version": "2026.07.01+vps.74.211.103.250",
+  "provider": "cloudflare-r2",
+  "object_store_root": "s3://sextant-prod-wnam-objects/objects",
+  "status": "attached",
+  "policy_statement_count": 1,
+  "runtime_principal_count": 1,
+  "bucket_name": "sextant-prod-wnam-objects",
+  "token_name": "sextant-prod-r2-runtime-wnam",
+  "permission_summary": "Object Read & Write",
+  "token_status": "active",
+  "bucket_location": "WNAM",
+  "generated_at": "2026-07-01T08:11:26Z"
+}

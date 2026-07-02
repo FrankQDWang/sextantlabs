@@ -1,0 +1,28 @@
+{
+  "deployment_version": "2026.07.01+vps.74.211.103.250",
+  "provider": "supabase-auth://ientixxmbdeoqdmkublx/invite-user-by-email",
+  "status": "sent",
+  "message_count": 1,
+  "recipient_count": 1,
+  "recipient_sha256": "1b3164ad984be4c46898063b1e36834882f3b0b153c420e73f712d35fa02a7de",
+  "admin_api": {
+    "http_status": 200,
+    "run_id": "20260701T100523Z",
+    "project_ref": "ientixxmbdeoqdmkublx",
+    "recipient_matched": true,
+    "created_at_present": true,
+    "invited_at_present": true,
+    "user_id_sha256": "929023ec1ec2828635d348b1eb393182befef04b1d4306eb0e694987d9d24147"
+  },
+  "delivery_verification": {
+    "method": "chrome-gmail-search",
+    "verified_at": "2026-07-01T10:06:40Z",
+    "gmail_account_sha256": "1b3164ad984be4c46898063b1e36834882f3b0b153c420e73f712d35fa02a7de",
+    "search_window_start": "2026-07-01",
+    "matching_result_count": 1,
+    "matching_result_text_sha256": "d1bc948805ec6783403a78b44146cf91a885017879da895bd9a5c6172ee97ec5",
+    "matching_result_mentions_supabase": true,
+    "matching_result_mentions_invite": true
+  },
+  "generated_at": "2026-07-01T10:06:40Z"
+}

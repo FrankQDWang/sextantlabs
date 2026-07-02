@@ -1,0 +1,58 @@
+source_roots = ["backend/src"]
+exclude = ["backend/tests/**"]
+layers = [
+  "runtime",
+  "api",
+  "infra",
+  "skills",
+  "application",
+  "ports",
+  "domain",
+  "contracts",
+  "common",
+]
+
+[[modules]]
+path = "sextant.common"
+depends_on = []
+layer = "common"
+
+[[modules]]
+path = "sextant.contracts"
+depends_on = ["sextant.common"]
+layer = "contracts"
+
+[[modules]]
+path = "sextant.domain"
+depends_on = ["sextant.common"]
+layer = "domain"
+
+[[modules]]
+path = "sextant.ports"
+depends_on = ["sextant.common", "sextant.contracts", "sextant.domain"]
+layer = "ports"
+
+[[modules]]
+path = "sextant.skills"
+depends_on = ["sextant.common", "sextant.contracts", "sextant.domain", "sextant.ports"]
+layer = "skills"
+
+[[modules]]
+path = "sextant.application"
+depends_on = ["sextant.common", "sextant.contracts", "sextant.domain", "sextant.ports"]
+layer = "application"
+
+[[modules]]
+path = "sextant.api"
+depends_on = ["sextant.common", "sextant.contracts", "sextant.application"]
+layer = "api"
+
+[[modules]]
+path = "sextant.infra"
+depends_on = ["sextant.common", "sextant.contracts", "sextant.domain", "sextant.ports"]
+layer = "infra"
+
+[[modules]]
+path = "sextant.runtime"
+depends_on = ["sextant.api", "sextant.infra", "sextant.skills"]
+layer = "runtime"

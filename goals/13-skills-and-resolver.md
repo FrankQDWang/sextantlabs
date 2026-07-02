@@ -1,6 +1,6 @@
 # 13. Story Skills 与 Resolver
 
-> 本文档定义 Sextant 记忆系统中的 **thin harness + fat story skills** 思路。这里不讨论技术实现，只讨论数据流、职责边界和记忆系统中的处理协议。
+> 本文档定义 Sextant 记忆系统中的 **thin harness + rich story skills** 目标架构。Harness 只负责装载输入、选择 skill、保存输出、维护证据链和状态转移；创作语义判断沉淀在可审计的 Story Skill 协议和 provider 候选中，并由确定性 validator 裁决是否进入 review/writeback/canon gate。
 
 本文对应 [GOAL.md](../GOAL.md) 中 canonical end-to-end flow 的流程编排层：Resolver 负责把输入路由到 Story Skills，Story Skills 再分别覆盖 `Source Normalization` 之后的结构解析、提及抽取、事件聚合、事实派生、记忆回写、冲突检查和证据问答。本文中的流程图是主流程的调度视角，不是另一套数据流。
 
@@ -39,6 +39,18 @@ flowchart TD
 | Story Skill | 定义某类记忆任务的数据流、判断标准、输出形态 | 不绑定技术实现 |
 | Memory Objects | RawSource、Scene、Mention、EventCandidate、CanonicalEvent、FactAssertion、MemoryPage 等 | 不负责流程调度 |
 
+## 2.1 不可混淆的边界
+
+| 对象 | 是什么 | 不是什么 |
+|---|---|---|
+| SkillRegistry | 可执行 skill metadata、版本、输入/输出 schema、review/writeback policy、eval contract 的注册表 | prompt 文件目录 |
+| Prompt Registry | provider prompt 的加载、metadata 校验和 hash lock | Story Skill 注册机制 |
+| Provider Adapter | 调用模型并返回结构化候选 | 生产事实、memory、canon 或 graph 写入者 |
+| Deterministic Validator | 检查 schema、SourceSpan、source ancestry、review policy、canon policy | prose 语义解释器 |
+| Codex Subagent Judge | eval 阶段的语义复核者 | 生产系统裁决者 |
+
+Story Skill 可以使用 LLM/provider 处理自然语言和创作判断，但最终落库只接受结构化候选通过确定性 gate。不得把中文或英文 cue 词表扩展成“小说语义理解层”。
+
 ## 3. 为什么需要 Story Skills
 
 | 问题 | 如果没有 skill | 使用 skill 后 |
@@ -49,23 +61,26 @@ flowchart TD
 | 用户新增片段 | 不知道该更新哪些记忆页 | skill 明确回写规则 |
 | 连续性检查 | 变成自由问答 | skill 明确检查哪些冲突 |
 
-## 4. 推荐 Story Skills
+## 4. 初始 Story Skill 目标集合
 
-| Skill | 输入 | 主要输出 | 是否阻塞主流程 |
-|---|---|---|---:|
-| ingest-draft | 作者新手稿、章节、片段 | RawSource、Scene、Mention、EventCandidate、MemoryPage 更新 | 否 |
-| ingest-canon-source | 授权原著、同人参考、设定集 | Canon Source、实体、事件、证据 | 否 |
-| split-structure | 原始文本 | Chapter、Scene、SourceSpan | 是，结构解析是后续基础 |
-| detect-pov | Scene | ScenePOV、CharacterKnowledge 候选 | 否 |
-| extract-mentions | Scene / SourceSpan | Mention | 否 |
-| resolve-alias | Mention、AliasRegistry | AliasRecord、CanonicalEntity 连接 | 否 |
-| extract-events | Scene、Mention、Entity | EventCandidate | 否 |
-| aggregate-events | EventCandidate、已有事件 | CanonicalEvent、related event candidate | 否 |
-| derive-facts | CanonicalEvent、Entity | FactAssertion | 否 |
-| rewrite-current-canon | 已通过 gate 的新证据、旧 MemoryPage | 更新后的 Current Canon | 否 |
-| check-continuity | 新事实、旧状态、POV、时间线 | ReviewItem | 否，除高风险 canon promotion |
-| answer-with-evidence | 作者问题 | Evidence-backed Answer | 不适用 |
-| build-next-page-context | 当前场景、POV、记忆状态 | ContextPack | 不适用 |
+| Skill | 输入 | 主要输出 | 模型判断 | 是否阻塞主流程 |
+|---|---|---|---|---:|
+| source-normalization | RawSource / SourceVersion | ProcessedMarkdownView、offset map、cleaning profile | 否 | 是 |
+| split-structure | ProcessedMarkdownView | Chapter、Scene、SourceSpan | 可辅助，但结构边界必须可验证 | 是 |
+| detect-pov | Scene、mentions、candidate entities | ScenePOV 候选、uncertainty reason | 是 | 否 |
+| extract-mentions | SourceSpan、schema pack | Mention | 可辅助 | 否 |
+| resolve-alias | Mention、AliasRecord、CanonicalEntity | AliasRecord 候选、ReviewItem 候选 | 可辅助 | 否 |
+| extract-events | Scene、mentions、schema pack | EventCandidate | 是 | 否 |
+| aggregate-events | EventCandidate、CanonicalEvent | aggregation decision | 是 | 否 |
+| derive-facts | CanonicalEvent、accepted evidence | FactAssertion 候选 | 可辅助，但 predicate/type 必须受 schema 约束 | 否 |
+| check-continuity | 新候选、canon、POV、timeline | AgentReviewFinding 或 ReviewItem 候选 | 是 | 否 |
+| rewrite-current-canon | accepted facts、old MemoryPage | MemoryPage rewrite proposal | 是 | 否 |
+| build-writing-context-pack | current position、memory、graph、review | WritingContextPack | 否，排序可使用检索信号 | 不适用 |
+| answer-with-evidence | author question、context pack | Evidence-backed answer | 是 | 不适用 |
+| character-agency-pass | current pressure、POV、memory | CharacterAgencyState | 是 | 不适用 |
+| storytelling-control | agency state、scene mode、author intent | RoleSlot、SceneSequelMode、ProseRenderingContract | 是 | 不适用 |
+| next-page-agent | context pack、control objects | BeatCandidate、DraftCandidate | 是 | 不适用 |
+| agent-review | draft candidate、contract、risk context | AgentReviewFinding | 是 | 不适用 |
 
 ## 5. Resolver 规则
 
@@ -79,7 +94,7 @@ flowchart TD
     B -->|角色卡| E[ingest-character-sheet]
     B -->|设定集| F[ingest-worldbuilding]
     B -->|作者问题| G[answer-with-evidence]
-    B -->|续写请求| H[build-next-page-context]
+    B -->|续写请求| H[build-writing-context-pack]
     B -->|用户修正别名| I[resolve-alias]
     B -->|检查矛盾| J[check-continuity]
 ```
@@ -110,6 +125,26 @@ flowchart TD
 | Review Policy | 哪些结果需要提示作者 |
 | Writeback Policy | 更新哪些 MemoryPage 或图谱投影 |
 
+每个 Story Skill 的文档必须能被实现为 registry metadata。最小字段为：
+
+```text
+name
+version
+trigger
+input_schema
+output_schema
+deterministic_validator
+model_judgment_allowed
+provider_prompt_ref
+review_policy
+writeback_policy
+eval_cases
+negative_cases
+judge_rubric
+```
+
+`provider_prompt_ref` 可以为空；`deterministic_validator`、`review_policy`、`writeback_policy` 和 `negative_cases` 不可为空。
+
 ## 8. 设计原则
 
 Sextant 的 Story Skills 不是为了增加流程复杂度，而是为了避免所有复杂判断都堆进一个不可调试的大 prompt。
@@ -125,4 +160,4 @@ flowchart LR
 
 ## 9. 结论
 
-Sextant 应采用 **thin harness + fat story skills**：核心系统保持薄，只维护证据、状态、投影和回写；领域判断写在 Story Skills 里。这样既能支持未来 Agent，又不会让第一阶段的记忆系统变成不可控的全自动写作系统。
+Sextant 应采用 **thin harness + rich story skills**：核心系统保持薄，只维护证据、状态、投影和回写；创作判断沉淀在可审计的 Story Skill 协议和结构化 provider 候选中，并由确定性 gate 控制进入 review、writeback 和 canon。这样既能支持未来 Agent，又不会让第一阶段的记忆系统变成不可控的全自动写作系统。

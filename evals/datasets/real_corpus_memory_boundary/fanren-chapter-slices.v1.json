@@ -1,0 +1,24 @@
+{
+  "corpus_path": ".sextant/imports/凡人修仙传_第一卷_风起天南_前30章.txt",
+  "judge_rubric_path": "evals/datasets/real_corpus_memory_boundary/codex-subagent-judge-rubric.v1.json",
+  "cases": [
+    {
+      "case_id": "fanren-ch01-opening",
+      "chapter_label": "第一章",
+      "line_start": 1,
+      "line_end": 18
+    },
+    {
+      "case_id": "fanren-ch15-time-skip",
+      "chapter_label": "第十五章",
+      "line_start": 518,
+      "line_end": 536
+    },
+    {
+      "case_id": "fanren-ch30-conflict",
+      "chapter_label": "第三十章",
+      "line_start": 996,
+      "line_end": 1014
+    }
+  ]
+}

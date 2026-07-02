@@ -62,6 +62,11 @@ UI 可以显示 `proposed`、`rerolled`、`partially accepted` 等产品语言�
 | accepted | converted_to_source_delta | SourceDelta 创建成功 | target base_hash 校验 |
 | rejected | archived | 历史归档 | no downstream memory refs |
 
+API `reject` command records the author action as `reject` and immediately
+persists the terminal `archived` status after applying the canonical
+`offered_to_author -> rejected -> archived` path. This keeps rejected drafts out
+of Memory/Canon while preserving the rejection signal for audit and UI display.
+
 禁止：
 
 ```text
@@ -133,7 +138,8 @@ deprecated
 状态：
 
 ```text
-proposed
+low_confidence
+  -> proposed
   -> auto_accepted
   -> user_confirmed
   -> user_corrected
@@ -142,9 +148,10 @@ proposed
 
 规则：
 
-1. alias_conflict 阻断强合并，不阻断 ingest。
-2. user_corrected 必须生成纠错 audit signal。
-3. scene_local alias 不能默认扩大为 global。
+1. low_confidence 记录 Mention 信号，但不强合并、不驱动 GraphProjection。
+2. alias_conflict 阻断强合并，不阻断 ingest。
+3. user_corrected 必须生成纠错 audit signal。
+4. scene_local alias 不能默认扩大为 global。
 
 ## EventCandidate
 

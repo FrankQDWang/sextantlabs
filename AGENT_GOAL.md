@@ -36,6 +36,12 @@ Sextant Agent 采用逐页推进、角色驱动、非大纲优先的写法。
 | Evidence-backed | 被接受文本进入 Memory 后，仍走 RawSource / SourceDelta / SourceSpan | [25-agent-memory-writeback.md](goals/25-agent-memory-writeback.md) |
 | Review before canon | 草稿候选先产生 AgentReviewFinding；正式 ReviewItem 只由 Memory gate 产生 | [26-agent-review-policy.md](goals/26-agent-review-policy.md) |
 
+### 2.1 Agent 语义边界
+
+Storytelling Control、Character Agency Pass、Next Page Agent 和 Agent Review 都属于创作语义工作。它们可以使用 provider / rich skill 提出结构化候选或草稿，但不能把本地词表、regex、固定中文/英文句式当成创作语义架构。
+
+Agent 产物必须保持候选身份：BeatCandidate、DraftCandidate、AgentReviewFinding。正式 SourceDelta、ReviewItem、FactAssertion、CanonPromotion 和 MemoryPage 更新仍由作者接受、证据链、review policy 和 memory gate 决定。
+
 ## 3. Agent + Memory + Storytelling 总体闭环
 
 Storytelling Control Layer 只产出控制产物；Next Page Agent 才产出 `BeatCandidate` 和 `DraftCandidate`。

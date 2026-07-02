@@ -1,0 +1,10 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Sanitized Supabase Vault proof hashes in progress-log evidence"
+regexTarget = "match"
+regexes = [
+  '''secret_ref_sha256=[0-9a-f]{64}''',
+  '''secret_ref_fingerprint=[0-9a-f]{12}\.\.\.[0-9a-f]{7}''',
+]

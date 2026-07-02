@@ -1,5 +1,5 @@
-// Sextant 写作工作台 — mock 数据
-// 示例项目：Harbor Nine · Ch.03 西档案室 · POV Mira
+// Sextant 写作工作台 — no-API 本地演示数据
+// API mode 必须使用后端项目/正文/记忆状态；这些 fixture 只服务视觉演示。
 
 export const project = {
   name: "Harbor Nine",
@@ -7,6 +7,15 @@ export const project = {
   pov: "Mira",
   wordCount: 1284,
 }
+
+export const demoSourceTitle = "西档案室"
+
+export const demoAskSuggestionContext = {
+  povLabel: project.pov,
+  recallLabel: "Kestrel",
+}
+
+export const demoAcceptedSentence = "Mira 把钥匙又往他那边推了一寸。"
 
 // 正文段落（作者已写入的 Manuscript Text）
 export const manuscript = [

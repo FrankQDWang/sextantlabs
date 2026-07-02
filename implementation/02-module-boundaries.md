@@ -22,7 +22,7 @@ backend/src/sextant/
 | `application` | use case 编排、事务边界、幂等、权限、job dispatch | 直接依赖 FastAPI、SQLAlchemy model、provider SDK |
 | `contracts` | Pydantic DTO、OpenAPI schema、skill input/output schema | 调用 repository、写 DB、调用 LLM |
 | `domain` | 领域对象、状态机、不变量、policy、value object | 依赖 api、infra、ORM、provider SDK |
-| `skills` | Story Skill 处理协议、确定性规则、模型判断边界 | commit DB、直接改 MemoryPage.current_canon、绕过 policy |
+| `skills` | Story Skill 协议、skill metadata、deterministic validator、model judgment boundary、review/writeback policy hook、eval rubric | commit DB、直接改 MemoryPage.current_canon、绕过 policy、把 prompt registry 当 SkillRegistry、用 prose cue regex 做创作语义判断 |
 | `ports` | repository、LLM、embedding、clock、id、object store 接口 | 具体实现、环境变量读取 |
 | `infra` | SQLAlchemy、Alembic、LLM provider、worker、object store、observability | 定义领域不变量 |
 | `common` | 无领域语义的基础类型和错误基类 | 反向 import domain 业务对象 |

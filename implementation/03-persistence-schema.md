@@ -44,11 +44,27 @@ audit_*       审计和追踪
 | `supersedes_version_id` | uuid | nullable self fk |
 | `created_at` | timestamptz | not null |
 
-唯一约束：
+同一 `raw_hash` 可以在同一 source 下出现多次。恢复旧版本必须能创建一个新的
+SourceVersion 事件，即使文本内容与历史版本完全相同；版本身份不能被内容哈希去重。
+
+### `source_deltas`
+
+字段：`id`, `project_id`, `source_id`, `previous_version_id`,
+`new_version_id`, `accepted_fragment_id`, `delta_kind`, `range_start`,
+`range_end`, `base_hash`, `submitted_text_ref`, `submitted_text_search`,
+`source_type`, `source_scope`, `provenance jsonb`, `status`, `created_at`。
+
+索引：
 
 ```text
-unique(source_id, raw_hash)
+(project_id, created_at, id)
+(project_id, status, created_at)
+gin_trgm(submitted_text_search)
 ```
+
+`submitted_text_search` 是 SourceDelta 历史检索 read model，不是事实源。
+原文仍必须通过 `submitted_text_ref` 从 object store 读取；搜索索引可由
+`backend/scripts/reindex_source_delta_search.py` 从 object store 重建。
 
 ### `source_processed_views`
 
@@ -107,13 +123,173 @@ unique(view_id, chapter_index)
 
 ### `story_scenes`
 
-字段：`id`, `chapter_id`, `scene_index`, `location_entity_id`, `pov_character_id`, `pov_mode`, `story_time`, `emotional_tone`, `scene_summary`, `scene_function`, `start_offset`, `end_offset`。
+字段：`id`, `chapter_id`, `scene_index`, `location_entity_id`, `pov_character_id`, `pov_mode`, `pov_confidence`, `pov_evidence_span_ids jsonb`, `pov_uncertainty_reason`, `story_time`, `emotional_tone`, `scene_summary`, `scene_function`, `start_offset`, `end_offset`。
 
 唯一约束：
 
 ```text
 unique(chapter_id, scene_index)
 ```
+
+## Story Schema Pack 表
+
+### `story_schema_packs`
+
+字段：`id`, `project_id nullable`, `pack_type`, `pack_name`, `version`,
+`status`, `entity_types jsonb`, `event_types jsonb`, `relations jsonb`,
+`extraction_hints jsonb`, `risk_rules jsonb`, `created_at`, `updated_at`。
+
+约束：
+
+```text
+pack_type in ('base', 'genre', 'project_override')
+status in ('active', 'deprecated')
+project_id is null for base/genre packs
+project_id is not null for project_override packs
+unique(pack_type, pack_name, version) where project_id is null
+unique(project_id, pack_type, pack_name, version) where project_id is not null
+```
+
+`entity_types` entries must carry a `name`. Genre or project override entity
+types that declare `subtype_of` inherit relation behavior from their base type.
+Extension entity types without `subtype_of` are allowed only for weak
+`related_to` graph participation until a later schema decision assigns a base
+subtype. Worker fact derivation must reject stronger relation attempts for
+those weak entity types before FactAssertion or GraphProjection side effects.
+
+`risk_rules.disabled_event_types` can remove event types from the effective
+project schema. SourceSpan event extraction must skip those event candidates and
+audit the schema decision instead of writing EventCandidate, CanonicalEvent, or
+event-derived FactAssertion rows.
+
+`risk_rules.disabled_relations` can remove relation predicates from the
+effective project schema. SourceSpan fact derivation must audit
+`schema_relation_not_allowed` and skip the write before any FactAssertion,
+CharacterKnowledge, MemoryPage, EvidenceLogEntry, or GraphProjection side
+effect.
+
+`relations` may be plain names or structured definitions. Structured Genre
+Pack and Project Override relations use:
+
+```json
+{
+  "name": "guards",
+  "subject_types": ["character", "faction"],
+  "object_types": ["location", "object"]
+}
+```
+
+The effective schema compiler must preserve these subject/object role contracts
+and remove them when `risk_rules.disabled_relations` disables the relation.
+Fact validation must reject custom relation role mismatches with
+`schema_relation_role_not_allowed` before evidence, memory, review, or graph
+side effects.
+
+`extraction_hints.relation_patterns` may declare deterministic SourceSpan
+templates for custom relations:
+
+```json
+{
+  "relation": "master_of",
+  "template": "{subject} is {object}'s master",
+  "subject_type": "character",
+  "object_type": "character"
+}
+```
+
+The worker may derive the relation only when both placeholders resolve to
+same-SourceSpan mentions whose entity types match the effective schema and the
+rendered template text appears in the source span. The derived fact still goes
+through the normal SourceSpan evidence, FactAssertion, conflict policy,
+MemoryPage, and GraphProjection path.
+
+`extraction_hints.mention_patterns` may declare deterministic SourceSpan
+templates for project-specific entity mentions:
+
+```json
+{
+  "entity_type": "artifact",
+  "template": "Relic: {mention}",
+  "confidence": 0.84
+}
+```
+
+`entity_type` must be present in the effective schema and `template` must
+contain `{mention}`. The mention keeps the custom schema type, so downstream
+FactAssertion refs may use `artifact`; the linked CanonicalEntity row still
+stores the nearest allowed base subtype such as `object` to preserve the
+database CanonicalEntity type constraint.
+
+`extraction_hints.event_patterns` may declare deterministic SourceSpan
+templates for project-specific event candidates:
+
+```json
+{
+  "event_type": "ritual",
+  "template": "{subject} sealed the rite at {location}",
+  "subject_type": "character",
+  "location_type": "location",
+  "confidence": 0.84
+}
+```
+
+`event_type` must be present in the effective schema, `template` must contain
+`{subject}`, and each placeholder type must be present in the effective schema.
+The worker may create a StoryEventCandidate only when the rendered template
+appears in the SourceSpan after same-SourceSpan mentions have resolved. The
+event still goes through CanonicalEvent aggregation and normal
+SourceSpan-backed fact derivation.
+
+GraphProjection is a derived read model over FactAssertions and confirmed
+CanonicalEvent structures, not a fact source. FactAssertions with statuses
+`canon`, `proposed`, `inferred`, `disputed`, `contradicted`, or `outdated` may
+project as graph edges with the matching `edge_status`; `user_note` facts remain
+outside graph projection. Its edge `relation` must preserve predicates that are
+allowed by the project's effective Story Schema, including custom Genre Pack or
+Project Override relations such as `master_of`. Unknown or out-of-schema legacy
+fact predicates may be projected as `related_to`, but they must not create new
+FactAssertion rows. The `memory_graph_projection_edges.relation` column
+therefore cannot use a static Base relation check constraint.
+
+GraphProjection direct CanonicalEvent auto-link may project confirmed event
+participants, locations, and objects as `present_at`, `occurred_at`, and
+`involves_object` edges only after the same effective schema/ref/role validation
+passes. The edge identity is `(project_id, source_ref, subject_ref, relation,
+target_ref)` so one CanonicalEvent can project multiple participant edges to the
+same event without conflict.
+
+### `project_story_schema_bindings`
+
+字段：`id`, `project_id`, `base_schema_pack_id`, `genre_schema_pack_id nullable`,
+`project_override_pack_id nullable`, `status`, `created_by`, `created_at`,
+`updated_at`。
+
+约束：
+
+```text
+status in ('active', 'superseded')
+unique(project_id) where status = 'active'
+```
+
+When no active binding exists, application code reads the immutable Base Story
+Schema. Active bindings merge Base + optional Genre Pack + optional Project
+Override into the final project schema used by extraction and validation paths.
+Genre Pack selection writes create a new active binding and supersede the
+previous binding while preserving the current Project Override pack ref. Genre
+Pack rows are global active `story_schema_packs` with `pack_type='genre'` and
+`project_id is null`; selecting a deprecated, project-scoped, missing, or
+non-genre pack is rejected before binding changes.
+System-admin Genre Pack provisioning creates global active `genre` rows through
+idempotent API writes after effective-schema validation. Deprecation changes
+only the pack status to `deprecated`, requires system-admin authorization, and
+is rejected while any active ProjectStorySchemaBinding still references the
+pack, so an existing project's effective schema is not silently changed.
+Project Override edits are written by versioning a new project-scoped
+`story_schema_packs` row and creating a new active
+`project_story_schema_bindings` row while superseding the previous binding.
+That write changes only schema configuration and audit/idempotency records; it
+does not create SourceDelta, evidence, memory, review, canon, or
+GraphProjection side effects.
 
 ## Entity、Event、Fact 表
 
@@ -131,12 +307,12 @@ gin_trgm(raw_text)
 
 ### `story_alias_records`
 
-字段：`id`, `project_id`, `alias_text`, `entity_id`, `alias_type`, `status`, `scope`, `evidence_span_ids jsonb`, `confidence`, `created_at`。
+字段：`id`, `project_id`, `alias_text`, `entity_id`, `alias_type`, `status`, `scope`, `valid_from_scene_id`, `valid_until_scene_id`, `evidence_span_ids jsonb`, `confidence`, `created_at`。
 
 约束：
 
 ```text
-status in ('auto_accepted', 'proposed', 'rejected', 'user_confirmed', 'user_corrected')
+status in ('auto_accepted', 'proposed', 'low_confidence', 'rejected', 'user_confirmed', 'user_corrected')
 ```
 
 ### `story_canonical_entities`
@@ -145,17 +321,59 @@ status in ('auto_accepted', 'proposed', 'rejected', 'user_confirmed', 'user_corr
 
 `cast_tier` 只适用于 character，不能替代 `canonical_status`。
 
+约束：
+
+```text
+entity_type in Base Story Schema entity types plus other
+canonical_status in ('canon', 'draft', 'provisional', 'discarded', 'contradicted')
+cast_tier is null or cast_tier in ('local_extra', 'minor_supporting', 'recurring', 'major', 'unknown')
+cast_tier is null unless entity_type = 'character'
+```
+
 ### `story_event_candidates`
 
 字段：`id`, `project_id`, `scene_id`, `event_type`, `summary`, `participants jsonb`, `objects jsonb`, `location_entity_id`, `state_change jsonb`, `evidence_span_ids jsonb`, `confidence`, `aggregation_status`, `created_at`。
 
+约束：
+
+```text
+aggregation_status in ('new', 'merged', 'related', 'conflict_version', 'rejected')
+```
+
 ### `story_canonical_events`
 
-字段：`id`, `project_id`, `event_type`, `title`, `event_status`, `primary_scene_id`, `event_candidate_ids jsonb`, `participants jsonb`, `objects jsonb`, `location_entity_id`, `story_time`, `summary`, `consequence_summary`, `evidence_span_ids jsonb`, `created_at`, `updated_at`。
+字段：`id`, `project_id`, `event_type`, `title`, `event_status`, `primary_scene_id`, `event_candidate_ids jsonb`, `participants jsonb`, `objects jsonb`, `location_entity_id`, `story_time`, `summary`, `cause_summary`, `consequence_summary`, `evidence_span_ids jsonb`, `created_at`, `updated_at`。
+
+约束：
+
+```text
+event_status in ('proposed', 'canon', 'disputed', 'deprecated', 'external_canon', 'author_note')
+```
 
 ### `story_fact_assertions`
 
 字段：`id`, `project_id`, `subject_ref jsonb`, `predicate`, `object_ref jsonb`, `fact_status`, `valid_from_scene_id`, `valid_until_scene_id`, `evidence_span_ids jsonb`, `confidence`, `source_scope`, `created_at`, `updated_at`。
+
+`predicate` must use the effective Story Schema relation whitelist. Character
+knowledge certainty such as `suspected`, `false_belief`, and `misunderstands`
+must not create ad hoc predicates; use `knows` / `does_not_know` plus
+`memory_character_knowledge.certainty` and knowledge-claim metadata. Worker
+fact derivation validates the effective relation whitelist before fact dedup,
+evidence merge, insert, or downstream canon/review side effects. Base Story
+Schema relations also validate documented subject/object roles before write;
+for example, `present_at` requires a character/faction subject and event
+object, while `owns` requires a character/faction subject and object target.
+Genre Pack and Project Override structured relation definitions use the same
+effective-schema role gate for custom relation predicates.
+Knowledge relations allow documented secret targets, so `knows` /
+`does_not_know` may point to `secret` refs as well as events,
+knowledge-claims, and lore. Grouped memory writeback provider facts use the
+same effective-schema predicate/ref/role gate before normalized views, spans,
+evidence, facts, review items, memory pages, or graph edges are written.
+Refs whose `type` is neither an effective schema entity type nor an explicitly
+allowed non-entity fact ref type are rejected before FactAssertion side effects.
+Refs must also carry a stable `id` unless they are literal values with `value`;
+malformed refs are audited and skipped before evidence or graph writes.
 
 禁止把 `fact_status='canon'` 作为普通 repository update。必须通过 Canon Promotion use case 写入。
 
@@ -171,11 +389,43 @@ EvidenceLogEntry 允许先写入，Canon Promotion 后写入。
 
 字段：`id`, `project_id`, `character_id`, `knows_ref jsonb`, `learned_in_scene_id`, `evidence_span_id`, `certainty`, `hidden_from jsonb`, `status`, `created_at`。
 
+约束：
+
+```text
+certainty in ('known', 'suspected', 'false_belief', 'misunderstands', 'does_not_know')
+status in ('active', 'superseded')
+```
+
 ### `memory_pages`
 
 字段：`id`, `project_id`, `page_type`, `target_ref jsonb`, `title`, `current_canon jsonb`, `appearance_log jsonb`, `event_log jsonb`, `relationships jsonb`, `open_threads jsonb`, `contradictions jsonb`, `source_refs jsonb`, `canon_status`, `memory_depth`, `updated_at`。
 
 `current_canon` 是综合 read/write object，但不能成为底层事实的唯一来源。所有条目必须能回到 `source_refs`、`fact_id` 或 `event_id`。
+
+### `semantic_embeddings`
+
+字段：`id`, `project_id`, `target_type`, `target_id`, `target_ref jsonb`,
+`text_hash`, `provider`, `model_name`, `dimensions`, `vector jsonb`,
+`embedding_vector vector`（PostgreSQL + pgvector 可用时）, `evidence_refs jsonb`,
+`updated_at`。
+
+约束：
+
+```text
+target_type in ('memory_page', 'source_span', 'style_sample')
+dimensions > 0
+unique(project_id, target_type, target_id, provider, model_name)
+```
+
+当前实现使用真实 DB 持久化 MemoryPage、SourceSpan、style_sample
+embedding 索引，并由 `refresh_semantic_index` worker job 刷新。JSONB/JSON
+`vector` 是可移植持久化副本；PostgreSQL + pgvector 环境通过
+`embedding_vector` 存储 pgvector 值，并由部署/烟测路径按当前
+`dimensions` 创建 HNSW cosine expression index
+`ix_semantic_embeddings_embedding_vector_hnsw`。运行时只有在 extension、
+vector 列和该索引都存在时才使用 pgvector `<=>` ranking，否则回退到
+有界应用侧 cosine ranking。该索引不能写 FactAssertion、MemoryPage、Canon
+或 GraphProjection，只能作为 ContextPack/MemoryAnswer relevance 召回线索。
 
 ### `review_items`
 
@@ -195,9 +445,21 @@ EvidenceLogEntry 允许先写入，Canon Promotion 后写入。
 
 Canonical status values are defined in [04-domain-state-machines.md](04-domain-state-machines.md).
 
+### `agent_beat_candidates`
+
+字段：`id`, `project_id`, `action_request_id`, `context_pack_id`, `target_source_id`, `target_version_id`, `target_scene_id`, `affected_range jsonb`, `base_hash`, `summary`, `driver_character`, `agency_rationale`, `storytelling_rationale`, `cast_decision jsonb`, `tension`, `memory_refs jsonb`, `evidence_refs jsonb`, `status`, `selected_at`, `created_at`。
+
+BeatCandidate 是候选方向，不是正文。它可以被后续 DraftCandidate 通过
+`selected_beat_id` 引用，但不能直接成为 SourceDelta、MemoryPage、Canon 或
+ReviewItem。
+
 ### `agent_review_findings`
 
-字段：`id`, `project_id`, `draft_candidate_id`, `risk_level`, `risk_type`, `summary`, `affected_text_ref`, `memory_refs jsonb`, `storytelling_refs jsonb`, `suggested_revision`, `can_offer_to_author`, `maps_to_review_type_if_accepted`, `draft_local_only`, `created_at`。
+字段：`id`, `project_id`, `action_request_id`, `draft_candidate_id nullable`, `risk_level`, `risk_type`, `summary`, `affected_text_ref`, `memory_refs jsonb`, `storytelling_refs jsonb`, `suggested_revision`, `can_offer_to_author`, `maps_to_review_type_if_accepted`, `draft_local_only`, `created_at`。
+
+`action_request_id` is required for every AgentReviewFinding. `draft_candidate_id`
+is nullable because explicit `check_risk` actions can return draft-local risk
+findings without creating a DraftCandidate.
 
 ### `agent_storytelling_controls`
 
@@ -216,6 +478,25 @@ dramatic_behavior_plan
 prose_rendering_contract
 ```
 
+### `context_pack_readiness`
+
+字段：`id`, `project_id`, `source_span_id`, `source_delta_id nullable`, `status`, `reason`, `affected_refs jsonb`, `evidence_refs jsonb`, `created_at`, `updated_at`。
+
+ContextPackReadiness 只记录 Memory / Review / Graph 依赖已经变更，等待作者请求续写或问答时按需生成 ContextPack。它不是完整 ContextPack，也不能反写 Memory、Canon 或 GraphProjection。作者请求生成的 WritingContextPack 只会把该 ContextPack `evidence_refs` 覆盖到的 SourceSpan readiness 标为 `consumed`。
+
+Unique:
+
+```text
+unique(project_id, source_span_id, reason)
+```
+
+约束：
+
+```text
+status in ('pending', 'stale', 'consumed')
+reason in ('memory_dependency_changed', 'review_dependency_changed')
+```
+
 ## Skill、Job、Audit 表
 
 ### `skill_runs`
@@ -226,10 +507,36 @@ prose_rendering_contract
 
 字段：`id`, `project_id`, `job_type`, `status`, `idempotency_key`, `payload jsonb`, `attempt_count`, `run_after`, `locked_by`, `locked_at`, `last_error`, `created_at`, `updated_at`。
 
+`payload` must include `step` equal to `job_type` and a non-empty
+`pipeline_version`; the DB worker validates this before handler execution.
+
 Unique:
 
 ```text
 unique(project_id, job_type, idempotency_key)
+```
+
+约束：
+
+```text
+job_type in (
+  'normalize_source',
+  'split_structure',
+  'run_memory_writeback',
+  'extract_mentions',
+  'resolve_aliases',
+  'extract_events',
+  'aggregate_events',
+  'derive_facts',
+  'run_conflict_policy',
+  'rewrite_memory_page',
+  'rebuild_graph_projection',
+  'build_context_pack',
+  'run_agent_candidate',
+  'run_agent_review',
+  'run_skill_replay_eval'
+)
+status in ('queued', 'running', 'succeeded', 'failed_retryable', 'failed_terminal', 'cancelled')
 ```
 
 ### `audit_events`

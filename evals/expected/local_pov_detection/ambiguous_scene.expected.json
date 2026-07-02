@@ -1,0 +1,21 @@
+{
+  "pov_character_name": null,
+  "pov_mode": "unknown",
+  "confidence": 0.0,
+  "evidence_span_ids": [
+    "00000000-0000-0000-0000-000000000101"
+  ],
+  "uncertainty_reason": "local_provider_no_model_judgment",
+  "evidence_refs": [
+    {
+      "type": "source_span",
+      "id": "00000000-0000-0000-0000-000000000101"
+    }
+  ],
+  "non_promotion": {
+    "creates_canon": false,
+    "creates_review_item": false,
+    "creates_memory_page": false,
+    "creates_graph_projection": false
+  }
+}

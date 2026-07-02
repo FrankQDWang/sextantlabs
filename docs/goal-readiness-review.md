@@ -1,148 +1,103 @@
 # Codex Goal Readiness Review
 
-本文记录当前仓库为了运行 Codex Goal mode long-horizon 任务还缺什么、已经补了什么、下一步应该怎么补。
+This review records whether the repository is ready to claim completion for the long-horizon Codex Goal that implements the complete Sextant production system.
 
-## 1. 总体判断
+## 1. Overall Judgment
 
-当前仓库已经具备很强的产品和领域设计基础，但在本次补齐前还不是一个可以直接交给 Codex Goal mode 长程实现产品的任务包。
+The repository now has local implementation evidence, hosted proof evidence,
+current deployment/source alignment, and hosted clean-context UI acceptance
+recorded for the current source documents. The final verification command set
+was re-run after the latest status-document edits and passed; no current
+source-document completion blocker is recorded.
 
-原因不是产品方向不清楚，而是缺少以下执行层材料：
+It is not acceptable to treat local green tests, local browser acceptance,
+deterministic local providers, or localhost smoke as substitutes for hosted
+proof. The source documents require real production configuration, hosted
+data-plane evidence, live provider proof refs, deployed smoke, and
+clean-context UI acceptance evidence; those evidence classes are now recorded in
+`docs/progress-log.md` for the current checkpoint.
 
-- agent 操作手册；
-- 当前 MVP 的 P0/P1/P2 范围；
-- 可运行命令和验证命令；
-- progress log 与 known gaps；
-- web 原型的 runbook；
-- local-first MVP 的验收标准；
-- test/e2e 的引入计划。
+## 2. What Is Ready
 
-本轮已在 PR #7 补齐文档层，PR #8 负责补齐 web 层的轻量运行说明和验证脚本。
+### 2.1 Product Direction
 
-## 2. 已满足的部分
+`GOAL.md` defines Sextant as an external long-term memory system for fiction authors. It emphasizes traceable evidence, correctable memory, story-aware retrieval, and canon/risk separation.
 
-### 2.1 产品方向清楚
+### 2.2 Agent Direction
 
-`GOAL.md` 已经定义 Sextant 是面向小说作者的外部长期记忆系统，核心是把作者自己的手稿、授权原著、设定集、角色卡、章节草稿等材料转化为可追溯、可检索、可校正、可用于续写上下文的故事记忆。
+`AGENT_GOAL.md` defines the writing agent as a memory-backed writing copilot, not an autopilot. The author remains in control.
 
-### 2.2 Agent 边界清楚
+### 2.3 Domain Source Material
 
-`AGENT_GOAL.md` 已经定义 Agent 是基于记忆、由角色驱动、逐页推进的写作副驾驶，不是自动写完整小说的 autopilot。
+`goals/` contains the Memory, Agent, and Storytelling Control design. All files under `goals/` must be read and covered.
 
-核心边界是：
+### 2.4 Product Experience Contracts
 
-```text
-Agent proposes.
-Author accepts.
-Memory records.
-```
+`experience/` defines the user-facing contracts for writing sessions, action requests, candidate lifecycle, memory writeback, review/risk, and conversational entry.
 
-### 2.3 产品体验闭环清楚
+### 2.5 Engineering Specifications
 
-`experience/` 已经定义：
+`implementation/` defines production engineering boundaries, persistence, API contracts, workers, CI/CD, observability, security, and acceptance criteria.
 
-```text
-作者正在写
-  -> ActionRequest
-  -> ContextPack
-  -> Story Skill / Agent
-  -> 候选、解释或风险
-  -> 作者采纳
-  -> SourceDelta
-  -> SourceSpan
-  -> Memory 回写
-  -> 继续写作
-```
+### 2.6 Web Prototype
 
-并且明确：
+`web/` provides a useful visual and interaction starting point. Its visual direction should be preserved, but its current demo data and component state are not production implementation.
 
-```text
-DraftCandidate != Manuscript Text != SourceDelta != SourceSpan != Memory != Canon
-```
+## 3. Current Residual Work
 
-### 2.4 生产工程规格已经开始形成
+The local implementation surface passed the 2026-07-02 core verification
+checkpoint recorded in `docs/progress-log.md`. Hosted readiness also has
+recorded evidence for managed PostgreSQL/pgvector, R2 object storage and IAM,
+Supabase Vault runtime secrets, Supabase Auth session/token/invitation paths,
+self-hosted observability, deployment approval, external smoke, backup/restore,
+rollback, SourceDelta reindex, worker capacity, provider live eval, and
+deployed clean-context UI acceptance.
 
-PR #7 的 `implementation/` 已经定义生产系统的模块边界、schema、状态机、API、worker、CI/CD、验收矩阵等。
+Current residual work is release-discipline work:
 
-### 2.5 web 原型已经存在
+- keep `docs/known-gaps.md`, `TODOs.md`, and this review aligned with the
+  latest evidence;
+- treat direct VPS SSH and Custom SMTP as operational follow-ups unless a
+  source document makes them current acceptance gates.
 
-PR #8 的 `web/` 已经提供 Vite + React 工作台原型，包括：
+## 4. Required Goal Start Procedure
 
-- editor；
-- candidate drawer；
-- memory writeback；
-- review badge；
-- selection menu；
-- top bar；
-- scene card；
-- mock demo data。
+Before coding, the implementation goal must:
 
-## 3. 已补齐的 Goal-ready 文档
+1. read `AGENTS.md`;
+2. read `PLAN.md`;
+3. enumerate every source Markdown file;
+4. read every file listed in `PLAN.md`;
+5. create a source coverage table in `docs/progress-log.md`;
+6. record any contradictions in `docs/implementation-decisions.md`.
 
-本轮在 PR #7 新增：
-
-- `AGENTS.md`：Codex / AI coding agent 操作手册。
-- `PLAN.md`：local-first MVP 的 P0/P1/P2、验收标准和里程碑。
-- `README.md`：仓库入口和当前 PR stack 说明。
-- `docs/goal-readiness-review.md`：本文件。
-- `docs/progress-log.md`：长程 Goal 过程记录。
-- `docs/known-gaps.md`：非阻塞缺口和后续工作。
-- `docs/implementation-decisions.md`：实施决策记录。
-
-## 4. 仍需在 PR #8 补齐的 web 层内容
-
-PR #8 应补：
-
-- `web/README.md`：前端运行、验证、demo 操作说明。
-- `web/.env.example`：明确 P0 默认 mock provider，无真实密钥。
-- `web/package.json`：增加 `typecheck` script。
-
-PR #8 可以暂不立刻加入 unit/e2e 依赖，但必须在 `docs/known-gaps.md` 记录。P0 真正实现时，应补 `test` 和 `test:e2e`。
-
-## 5. 当前缺口分级
-
-### Blocking for full Goal implementation
-
-- `web/` 仍是 demo/mock state，没有 domain/store 层。
-- 没有 localStorage persistence。
-- 没有 AcceptedFragment / SourceDelta / SourceSpan 的真实 domain object。
-- 没有 unit/e2e 测试。
-- 没有 CI workflow。
-
-### Not blocking for Goal-ready documentation
-
-- 没有后端。
-- 没有真实 LLM provider。
-- 没有 Postgres。
-- 没有登录和多租户。
-- 没有生产部署。
-
-这些都是 P2，不应阻塞当前 local-first MVP。
-
-## 6. 推荐执行顺序
-
-1. 合并 PR #7：工程规格 + Goal-ready 文档。
-2. 合并 PR #8：web 工作台原型 + web runbook + typecheck。
-3. 新开 P0 implementation PR：实现 local-first domain/store/persistence。
-4. 新开 tests PR：补 unit tests 和 Playwright e2e。
-5. 再考虑后端、真实 LLM、Postgres、CI/CD。
-
-## 7. 推荐 Goal Prompt
+## 5. Recommended Goal Prompt
 
 ```text
-/goal Implement the P0 MVP described in PLAN.md.
+/goal Implement the complete production-ready Sextant system described by the repository documentation.
 
-Read AGENTS.md first. Preserve the current web workbench visual direction. Do not redesign the UI. Build a local-first, mock-provider vertical slice: selection -> candidate -> accepted fragment -> source delta -> source span -> memory writeback preview -> review queue.
+Read AGENTS.md first. Then read PLAN.md and enumerate every Markdown file under GOAL.md, AGENT_GOAL.md, goals/, experience/, implementation/, docs/, README.md, and web/README.md.
 
-Update docs/progress-log.md after each checkpoint and docs/known-gaps.md for non-blocking gaps. Stop only when P0 acceptance criteria and verification commands pass, or when blocked with exact evidence.
+Before coding, create a source coverage section in docs/progress-log.md listing every source Markdown file and the implementation obligations derived from it. Do not omit, collapse, or simplify requirements silently.
+
+Build the complete production implementation, not a demo. No placeholder features, no fake UI-only success states, no hardcoded product flow pretending to be real behavior, and no mock-only final implementation.
+
+Preserve the current web workbench visual direction. Do not redesign the UI unless a documented product contract requires a targeted change.
+
+Only the LLM/provider boundary may use a deterministic local substitute. Do not mock or fake any other subsystem for completion or acceptance. If non-LLM credentials, hosted infrastructure, or third-party access are unavailable, implement the production interface, configuration contract, and validation path, then record the exact blocker in docs/known-gaps.md. Do not mark that feature complete.
+
+Use subagents where helpful for source coverage, architecture review, backend/domain review, frontend UI preservation review, security review, and clean-context human acceptance.
+
+Final clean-context acceptance must use only the running UI through browser/computer-use. The reviewer must not inspect source code or docs. They must verify the complete user-facing workflow and report exact pass/fail evidence.
+
+Stop only when every source document requirement is implemented or explicitly blocked with evidence, all production acceptance criteria pass, and code, tests, and docs are aligned.
 ```
 
-## 8. Readiness Status
-
-After this documentation pass, the repository should be considered:
+## 6. Readiness Status
 
 ```text
-Goal-ready for planning and P0 implementation.
-Not yet complete as a usable product.
+Ready to continue production implementation: yes, with source coverage already recorded
+Ready to claim local implementation checkpoint: yes, per docs/progress-log.md
+Ready to claim hosted-readiness checkpoint: yes, when local production secrets are sourced and the gate returns hosted-readiness-config-ok
+Ready to claim full product completion: yes for this checkpoint, with the current status documents and verification evidence
 ```
-
-The next implementation goal should be scoped to `PLAN.md` P0, not to the entire production system described in `implementation/`.

@@ -1,0 +1,12 @@
+{
+  "deployment_version": "2026.07.01+vps.74.211.103.250",
+  "issuer": "https://ientixxmbdeoqdmkublx.supabase.co/auth/v1",
+  "audience": "authenticated",
+  "status": "issued",
+  "token_count": 1,
+  "subject_count": 1,
+  "subject_hashes": [
+    "a4be75ad142a01c9ed504b87bd4cf6475f5999d6fc13e02eff81bf263750482f"
+  ],
+  "generated_at": "2026-07-01T07:59:53Z"
+}

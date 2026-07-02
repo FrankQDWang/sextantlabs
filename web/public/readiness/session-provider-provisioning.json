@@ -1,0 +1,12 @@
+{
+  "deployment_version": "2026.07.01+vps.74.211.103.250",
+  "provider": "supabase",
+  "issuer": "https://ientixxmbdeoqdmkublx.supabase.co/auth/v1",
+  "jwks_url": "https://ientixxmbdeoqdmkublx.supabase.co/auth/v1/.well-known/jwks.json",
+  "admin_url": "https://supabase.com/dashboard/project/ientixxmbdeoqdmkublx/auth/users",
+  "status": "provisioned",
+  "client_count": 1,
+  "jwks_key_count": 1,
+  "jwks_key_types": ["EC"],
+  "generated_at": "2026-07-01T07:59:53Z"
+}

@@ -439,6 +439,18 @@ ReviewItem 是统一风险对象。
 
 ## 7. Story Skill 工程协议
 
+### 7.1 Story Skill 状态纠偏
+
+当前代码库现在已经完成 thin harness + rich-skills 的本地架构骨架：provider adapters、prompt registry、SkillRun audit、worker handlers 之上，已补齐 first-class SkillRegistry、Resolver、`run_skill(...)` runtime、real-corpus boundary eval、RRF 融合和 sliding-window 上下文组织。
+
+当前剩余顺序是：
+
+1. 保持 source-of-truth 文档显式拒绝 local prose cue/regex 语义推断；
+2. 继续把创作语义候选放在 rich skills/provider 输出，并由 deterministic validator 裁决；
+3. 用真实 hosted provider / deployment 证据关闭外部 blocker，而不是把本地绿灯误报为已上线完成。
+
+### 7.2 Story Skill 文档形态
+
 每个 Story Skill 必须包含：
 
 ```text
