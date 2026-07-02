@@ -166,10 +166,10 @@ def run_secret_manager_probe(
     }
 
 
-def render_secret_manager_probe_cli_evidence() -> str:
+def render_cli_evidence() -> str:
     return json.dumps(
         {
-            "secret_manager_access": "verified",
+            "managed_store_access": "verified",
             "status": "pass",
         },
         sort_keys=True,
@@ -196,7 +196,7 @@ def main() -> int:
             print("hosted-secret-manager-config-ok")
             return 0
         run_secret_manager_probe(config)
-        print(render_secret_manager_probe_cli_evidence())
+        print(render_cli_evidence())
         return 0
     except (ConfigError, SecretReadError) as exc:
         print(str(exc), file=sys.stderr)

@@ -119,10 +119,10 @@ def test_hosted_secret_manager_probe_accepts_supabase_vault_ref_without_exposing
 def test_hosted_secret_manager_probe_cli_evidence_is_constant_redacted() -> None:
     probe = _load_probe_module()
 
-    evidence = json.loads(probe.render_secret_manager_probe_cli_evidence())
+    evidence = json.loads(probe.render_cli_evidence())
 
     assert evidence == {
-        "secret_manager_access": "verified",
+        "managed_store_access": "verified",
         "status": "pass",
     }
 
