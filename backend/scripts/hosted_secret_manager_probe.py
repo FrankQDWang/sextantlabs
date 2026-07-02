@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import ipaddress
 import json
 import os
@@ -163,8 +162,7 @@ def run_secret_manager_probe(
     return {
         "status": "pass",
         "secret_ref_scheme": config.secret_ref_scheme,
-        "secret_ref_sha256": hashlib.sha256(config.secret_ref.encode("utf-8")).hexdigest(),
-        "secret_value_byte_count": len(secret_bytes),
+        "secret_value_status": "resolved_non_empty",
     }
 
 

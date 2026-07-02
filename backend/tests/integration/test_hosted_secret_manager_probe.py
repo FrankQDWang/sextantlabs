@@ -85,8 +85,9 @@ def test_hosted_secret_manager_probe_reads_without_exposing_secret() -> None:
     assert resolver.refs == [config.secret_ref]
     assert evidence["status"] == "pass"
     assert evidence["secret_ref_scheme"] == "aws-secretsmanager"
-    assert evidence["secret_ref_sha256"]
-    assert evidence["secret_value_byte_count"] == len(b"sk-live-secret-value")
+    assert evidence["secret_value_status"] == "resolved_non_empty"
+    assert "secret_ref_sha256" not in evidence
+    assert "secret_value_byte_count" not in evidence
     assert "sk-live-secret-value" not in encoded
     assert "prod/sextant/openai" not in encoded
 
@@ -108,7 +109,9 @@ def test_hosted_secret_manager_probe_accepts_supabase_vault_ref_without_exposing
     assert resolver.refs == [config.secret_ref]
     assert evidence["status"] == "pass"
     assert evidence["secret_ref_scheme"] == "supabase-vault"
-    assert evidence["secret_value_byte_count"] == len(b"sk-live-secret-value")
+    assert evidence["secret_value_status"] == "resolved_non_empty"
+    assert "secret_ref_sha256" not in evidence
+    assert "secret_value_byte_count" not in evidence
     assert "sk-live-secret-value" not in encoded
     assert "sextant_openai_api_key" not in encoded
 
