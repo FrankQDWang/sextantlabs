@@ -1,161 +1,58 @@
 # Known Gaps
 
-本文记录当前仓库相对于 `PLAN.md` P0 MVP 和后续生产实现仍缺少的内容。
+## Current Gaps Correction - 2026-07-01
 
-## 1. P0 阻塞缺口
+Hosted proof refs now validate through the readiness gate. The local thin-harness + rich-skills architecture gap is also closed in the working tree.
 
-这些缺口会阻塞 local-first MVP 完成。
+## Active Gaps
 
-### 1.1 Domain / Store 层尚未实现
+- direct SSH access to the VPS remains operationally unhealthy: TCP connects to `74.211.103.250:22`, but OpenSSH times out during banner exchange and the VPS did not observe those inbound sessions. Current deployment used KiwiVM shell plus private R2 artifact handoff instead of SSH, so this is an access/runbook gap rather than a current hosted-readiness blocker.
+- Custom SMTP remains deferred until the real launch domain, sender identity, and commercial onboarding plan are known; current hosted readiness uses Supabase Auth admin invite evidence instead of adding a paid mail provider.
+- `TODOs.md` now tracks production-ready TODOs that are intentionally not completion evidence. Secret management, self-hosted observability, R2 IAM, session/token proof, invitation delivery, rollback alias drill, and Supabase scratch backup/restore proof have been moved to closed evidence after hosted validation.
 
-当前 `web/` 工作台仍主要使用组件 state 和 mock data。P0 需要补：
+## Hosted Evidence Reverified On 2026-07-01
 
-- `DemoProject`
-- `ActionRequest`
-- `DraftCandidate`
-- `AcceptedFragment`
-- `SourceDelta`
-- `SourceSpan`
-- `MemoryWritebackPreview`
-- `ReviewItem`
+Live verification evidence:
 
-并把核心交互接入这些 domain object。
+- `bash scripts/validate-production-config.sh` failed only on missing production configuration, not on code/runtime errors;
+- `bash scripts/validate-hosted-readiness.sh --allow-blocked` now returns `hosted-readiness-config-ok`.
+- `uv run python backend/scripts/hosted_external_smoke.py` later returned `status=pass` against `https://api.sextantlabs.net`;
+- `SEXTANT_HOSTED_WORKER_METRICS_URL=https://api.sextantlabs.net/worker-metrics uv run python backend/scripts/hosted_worker_capacity_probe.py` returned `status=pass`;
+- `uv run python backend/scripts/hosted_provider_live_eval_probe.py` returned `status=pass` for all five provider skills;
+- `SEXTANT_PGVECTOR_RECALL_PROJECT_ID=fc5d58ab-80bd-4761-adef-3593cc98c756 uv run python backend/scripts/hosted_pgvector_recall_probe.py` returned `status=pass`.
+- Vercel deployment `dpl_4QoHJ1SQWJwnJmFciuH7BCNmgcsJ` was created for the new `sextant-web` project and aliased as `https://sextant-web-nine.vercel.app`;
+- browser-based hosted UI acceptance at `https://sextant-web-nine.vercel.app` passed runtime Supabase login, memory page viewing, evidence-boundary memory Q&A, candidate acceptance, and memory writeback completion after the relation-role schema fix;
+- Supabase Postgres confirmed the latest hosted UI writeback job `7fac172d-a503-4fc2-a61e-a82edc6c7247` succeeded and SourceDelta `0238c2af-1e36-4d4d-bc59-e90c6dff1176` reached `memory_writeback_completed`.
+- `uv run python backend/scripts/hosted_source_delta_reindex_probe.py --batch-size 20 --all` returned `status=pass`, `rebuild_all=true`, and `reindexed_rows=5` against Supabase/R2 after fixing full-rebuild cursor pagination.
+- `app.sextantlabs.net` was added to Vercel project `sextant-web`, verified by Vercel as `configured_correctly`, aliased to the production deployment, and loaded in Chrome with runtime Supabase login plus API-backed memory pages.
+- `uv run python backend/scripts/hosted_object_store_iam_probe.py` returned `status=pass` against the hosted Cloudflare R2 artifact at `https://app.sextantlabs.net/readiness/object-store-iam.json`; hosted readiness no longer reports `SEXTANT_OBJECT_STORE_IAM_PROOF_REF` as missing.
+- self-hosted observability endpoint code is now deployed to the VPS API: `https://api.sextantlabs.net/metrics`, `/observability/traces`, and `/observability/alerts` returned HTTP `200`, and `uv run python backend/scripts/hosted_observability_pipeline_probe.py` returned `status=pass`;
+- `uv run python backend/scripts/hosted_backup_restore_probe.py` returned `status=pass` after restoring production `public` schema plus `vector` and `pg_trgm` extensions into Supabase scratch project `avjwnxdexbwdenipizfc`; hosted readiness no longer reports `SEXTANT_BACKUP_RESTORE_PROOF_REF` as missing.
+- the VPS runtime was switched to Supabase Vault for provider credentials: sanitized KiwiVM evidence recorded `direct_openai_key_count=0`, `secret_ref_scheme=supabase-vault`, API/worker services active, and a post-switch hosted external smoke returned `status=pass`;
+- `uv run python backend/scripts/hosted_invitation_delivery_probe.py` returned `status=pass` against the hosted Supabase Auth invite artifact, after the admin invite was sent and Gmail delivery was verified through Chrome.
 
-### 1.2 localStorage persistence 尚未实现
+Current exact hosted evidence groups:
 
-P0 要求刷新后保留：
+- proof-ref alignment for completed live evidence: deployment, object-store read/write, worker capacity, provider live eval, pgvector recall, external smoke, clean-context UI acceptance, SourceDelta search reindex, and Vercel rollback proof refs are now set in the local production env as `runbook://docs/progress-log/...` refs. They still depend on keeping `docs/progress-log.md` current and auditable;
+- object-store IAM proof update: `SEXTANT_OBJECT_STORE_IAM_PROOF_REF=cloudflare-r2://sextant-prod-wnam-objects/runtime-token` is now set in the local production env, the hosted artifact is deployed under `app.sextantlabs.net`, and the probe passed without exposing token secrets, account ids, or raw policy documents;
+- managed secret-manager proof: Supabase Vault support is implemented and verified against production Supabase with `supabase-vault://ientixxmbdeoqdmkublx/sextant_openai_api_key`; `hosted_secret_manager_probe.py` passed, hosted provider live eval passed with direct OpenAI env keys unset, and the VPS runtime now reports no direct OpenAI env keys plus a Supabase Vault secret-ref scheme;
+- session/token proof update: Supabase Auth provisioning and token-issuer artifacts are now hosted at `https://app.sextantlabs.net/readiness/session-provider-provisioning.json` and `https://app.sextantlabs.net/readiness/token-issuer.json`; both corresponding probes returned `status=pass`, and the local production env now has `supabase://ientixxmbdeoqdmkublx/auth` proof refs;
+- invitation delivery proof: Supabase Auth admin invite evidence is hosted at `https://app.sextantlabs.net/readiness/invitation-delivery.json`; the local production env now has `supabase-auth://ientixxmbdeoqdmkublx/invite-user-by-email` provider/proof refs and the hosted invitation probe passed;
+- observability proof: self-hosted traces and alert-state endpoints are implemented and deployed, and `SEXTANT_OBSERVABILITY_PIPELINE_PROOF_REF` now points to progress-log evidence after the hosted probe passed against real metrics/traces/alerts endpoints;
+- DR proof update: `SEXTANT_BACKUP_RESTORE_PROOF_REF` now points to `runbook://docs/progress-log/supabase-scratch-backup-restore-proof` after a real Supabase scratch restore validated SourceDelta, MemoryPage, and SourceSpan -> RawSource counts. A real Vercel alias rollback drill was executed and restored on 2026-07-01, and rollback proof refs are aligned to `docs/progress-log.md` evidence rather than a synthetic placeholder.
 
-- 正文新增句子；
-- accepted fragments；
-- source deltas；
-- source spans；
-- writeback preview 状态；
-- review queue。
+The 2026-07-01 implementation pass added first-class `StorySkillRegistry`, `run_skill(...)`, Resolver planning, real-corpus Fanren boundary eval assets, Codex judge rubric metadata, RRF retrieval fusion, and sliding-window context organization. These close the local architecture gaps but do not reduce the need to keep hosted proof evidence auditable.
 
-建议 key：
+## Useful Existing Infrastructure
 
-```text
-sextant.demo.v1
-```
+- source import/versioning and SourceDelta/SourceSpan/EvidenceLogEntry mechanics;
+- persistence, API, worker, review, memory, graph, auth, object-store, observability, and frontend integration implementations;
+- provider ports/adapters, prompt files, prompt hash locks, `SkillRun` persistence, replay-diff evaluation, provider-boundary guardrails, explicit scene metadata handling, and structured `FACT:` / `THREAD:` local directive parsing.
 
-### 1.3 采纳链条仍未真实落地
+## Guardrails That Still Apply
 
-必须保留并实现：
-
-```text
-DraftCandidate -> AcceptedFragment -> SourceDelta -> SourceSpan -> MemoryWritebackPreview -> ReviewItem
-```
-
-目前 UI 已经能演示“选一句加入”和“我准备记住这些”，但它还不是完整 domain transition。
-
-### 1.4 P1 按钮需要处理
-
-当前 web 原型中存在一些尚未完整实现的动作，例如：
-
-- 替换当前句；
-- 借这个方向重写；
-- 查看依据；
-- 全文采纳。
-
-P0 中不能让这些按钮伪装为已完成。需要选择一种处理方式：
-
-- 隐藏；
-- 禁用；
-- 标记为 P1 / soon；
-- 或真正实现并加入测试。
-
-### 1.5 测试缺失
-
-P0 完成前应补：
-
-- domain transition unit tests；
-- Playwright e2e 主流程：选中文本 -> 打开候选 -> 选一句加入 -> memory writeback -> confirm/review -> refresh persistence；
-- reset demo state 测试。
-
-## 2. P0 非阻塞但建议尽快补的内容
-
-### 2.1 CI workflow
-
-建议在 P0 或下一轮 PR 增加：
-
-```bash
-pnpm --dir web lint
-pnpm --dir web typecheck
-pnpm --dir web test
-pnpm --dir web build
-pnpm --dir web test:e2e
-```
-
-### 2.2 稳定测试 selector
-
-Playwright 前应为关键入口增加稳定 selector，例如：
-
-- editor root；
-- selection action；
-- candidate drawer；
-- accept sentence button；
-- memory writeback panel；
-- review badge；
-- reset demo state。
-
-这些 selector 不应改变视觉审美。
-
-### 2.3 Error / Empty states
-
-P0 可以先用 demo seed data，但最好补轻量状态：
-
-- seed load failed；
-- localStorage parse failed；
-- reset state；
-- no candidate available。
-
-## 3. P1 缺口
-
-这些不阻塞 P0。
-
-- 全文采纳候选。
-- 替换当前句。
-- 借方向重写。
-- 查看候选依据的完整 SourceSpan 列表。
-- Review Queue 详情页。
-- 本地 markdown 导入。
-- 多项目或多章节切换。
-- 更完整的 Undo history。
-
-## 4. P2 / 生产级缺口
-
-这些属于 `implementation/` 描述的生产级实现，不属于当前 P0。
-
-- 后端 API。
-- Postgres persistence。
-- Alembic migration。
-- 真实 LLM provider。
-- Story Skill pipeline。
-- Worker / jobs。
-- GraphProjection。
-- ContextPack readiness。
-- 用户认证。
-- 多租户。
-- 部署和 observability。
-- 安全扫描和生产 smoke test。
-
-## 5. 不应作为缺口处理的内容
-
-以下不是当前 P0 的缺口，不应诱导 Codex 扩 scope：
-
-- 自动生成整章或整本小说；
-- 自动替作者决定剧情；
-- 完整 GraphRAG；
-- 纯向量记忆；
-- 一步抽完整知识图谱；
-- 把模型输出直接写入 Current Canon；
-- 大改当前 web UI 审美。
-
-## 6. 当前状态摘要
-
-```text
-Goal-ready docs: done in PR #7
-Web runbook/typecheck/mock env: added in PR #8
-Local-first MVP implementation: not started
-Tests/e2e: not started
-```
+- Prompt registry alone is not SkillRegistry; current completion evidence depends on the separate StorySkillRegistry, resolver, runtime, and validation surfaces.
+- Provider adapters alone are not Story Skill architecture; current completion evidence depends on the story-skill runtime, replay/eval harness, provider validation, and application wiring.
+- Local deterministic providers are still not semantic quality proof; provider/live-eval proof must remain tied to production provider configuration and sanitized hosted evidence.
+- Local green tests are still not hosted readiness; hosted readiness is proved only by the production config/readiness gates plus hosted probes recorded in `docs/progress-log.md`.
+- Browser-only local walkthroughs are still not deployed acceptance; clean-context acceptance must remain tied to the hosted UI/browser evidence recorded in `docs/progress-log.md`.

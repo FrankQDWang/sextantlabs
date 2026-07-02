@@ -76,6 +76,9 @@ code creates ReviewItem outside review policy/factory
 code maps model_suggestion to user_draft/user_published without author accept
 code builds FactAssertion from GraphProjection
 code writes full manuscript text to normal logs
+provider classes create FactAssertion, ReviewItem, MemoryPage, SourceDelta,
+SourceSpan, EvidenceLogEntry, GraphProjection, alias, entity, or event ORM
+records directly
 ```
 
 ## tach Rules
@@ -110,6 +113,13 @@ Prompt PR must include:
 3. golden expected output update,
 4. failure case if changing risk or promotion behavior,
 5. no raw full manuscript dumps in repo.
+
+The implemented prompt guardrail is `backend/tests/contract/test_prompt_registry.py`.
+It loads every required OpenAI prompt file, checks required metadata,
+structured-output constraints, golden/failure case references, and compares a
+locked prompt hash in `evals/expected/prompts`. Prompt text or front-matter
+changes therefore fail CI until the expected prompt lock is updated with the
+corresponding golden/failure case review.
 
 ## PR Template Required Questions
 

@@ -14,5 +14,9 @@ node_modules
 .vite/
 .next/
 dist/
+test-results/
+playwright-report/
 *.tsbuildinfo
 .DS_Store
+.vercel
+.env*

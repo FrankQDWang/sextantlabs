@@ -1,0 +1,12 @@
+{
+  "failure_cases": [
+    "backend/tests/integration/test_source_pipeline_cleanup.py::test_source_pipeline_does_not_infer_pov_from_perspective_phrase"
+  ],
+  "golden_cases": [
+    "backend/tests/integration/test_pov_detection_provider.py::test_openai_pov_detection_provider_parses_structured_response",
+    "backend/tests/golden/test_provider_golden.py::test_local_pov_detection_golden_ambiguous_scene_output"
+  ],
+  "prompt_hash": "acb86657a50a8f2e954c8404dc3633f6aa4ccb59012b21a8c0c7bd0012e6e8fd",
+  "prompt_version": "openai-pov-detection.v1",
+  "skill_name": "openai_pov_detection"
+}

@@ -50,6 +50,17 @@ Rules:
 2. Risk context cannot be written as fact.
 3. POV constraint must include forbidden knowledge.
 4. Style memory is prose support, not story fact.
+5. Character agency state is derived from Memory/Review context for behavior
+   guidance, including active CharacterKnowledge as read-only knowledge state,
+   and cannot create or replace facts.
+6. Token-budget truncation is a snapshot retrieval policy only: it may remove
+   lower-relevance context entries from a WritingContextPack, but it must not
+   mutate Memory, ReviewItem, Canon, GraphProjection, SourceDelta, or provider
+   state.
+7. Semantic recall is a read-only vocabulary-expansion retrieval policy. It
+   may use AliasRecord text and MemoryPage titles/open threads to rank existing
+   evidence-backed entries, but it cannot write facts, canon, reviews, memory,
+   graph state, SourceDelta, or provider state.
 
 ## CharacterAgencyPass
 
@@ -289,6 +300,30 @@ style
 overreach
 target range
 ```
+
+Current production gates include draft-local `no_turn_risk` for passages that
+lack a detectable turn, draft-local `scene_mode_risk` for scene-mode passages
+that lack detectable goal or opposition signals, draft-local
+`mode_mixing_risk` for mixed-mode passages that lack a detectable small action,
+short reaction, or small decision, draft-local `sequel_mode_risk` for
+sequel-mode passages that lack detectable dilemma or decision signals, and
+draft-local `telling_over_action` when a DramaticBehaviorPlan disallows direct
+thought but the draft directly states inner state. Paragraphs that pack at
+least three direct inner-state sentences create draft-local
+`inner_state_overload`, unless an explicit inner-state budget violation has
+higher priority. A DramaticBehaviorPlan that requires visible choice also
+creates draft-local `choice_missing` when the candidate lacks a detectable
+choice signal. Show-not-tell targets create draft-local `exposition_risk` when
+the draft relies on explanatory sentences without observable scene behavior.
+Subtext targets create draft-local `subtext_missing` when dialogue states
+information directly instead of carrying the requested subtext. Explicit
+dramatic rendering targets create draft-local `dramatization_risk` when the
+draft lacks detectable visible behavior, dialogue, or choice signals. Large
+story-scope jumps and finality language create draft-local `control_risk` when
+the candidate appears to decide major story direction for the author, including
+elapsed-time jumps, generic case/thread closure, public truth spread, and
+irreversible departure/finality language. These findings do not create formal
+`ReviewItem` rows before author acceptance.
 
 It emits `AgentReviewFinding`, using `goals/26` risk_type.
 

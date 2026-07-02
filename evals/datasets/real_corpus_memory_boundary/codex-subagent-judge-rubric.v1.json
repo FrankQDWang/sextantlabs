@@ -1,0 +1,37 @@
+{
+  "rubric_version": "codex-subagent-judge-rubric.v1",
+  "purpose": "Eval-only review for real-corpus story-skill outputs. Not production authority.",
+  "dimensions": [
+    {
+      "name": "unsupported_claims",
+      "pass_condition": "No claim exceeds the supplied SourceSpan-bound evidence."
+    },
+    {
+      "name": "source_boundary_drift",
+      "pass_condition": "No output cites evidence outside the fixed slice or invents missing ancestry."
+    },
+    {
+      "name": "over_inference",
+      "pass_condition": "No prose-level hint is promoted to fact, character knowledge, canon, or graph truth without structured candidate support."
+    },
+    {
+      "name": "review_policy",
+      "pass_condition": "Risky or ambiguous judgments stay in review/risk lanes and do not silently bypass policy."
+    },
+    {
+      "name": "canon_pollution",
+      "pass_condition": "No proposed/disputed/blocked material is represented as current canon."
+    }
+  ],
+  "required_output_shape": {
+    "status": "pass|fail",
+    "dimension_results": [
+      {
+        "name": "string",
+        "status": "pass|fail",
+        "finding": "short explanation"
+      }
+    ],
+    "overall_finding": "short explanation"
+  }
+}

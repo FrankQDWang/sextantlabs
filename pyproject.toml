@@ -1,0 +1,48 @@
+[project]
+name = "sextantlabs"
+version = "0.1.0"
+description = "Production implementation for the Sextant fiction memory and writing agent system."
+readme = "README.md"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+  "alembic>=1.17.0",
+  "fastapi>=0.124.0",
+  "pyjwt[crypto]>=2.10.0",
+  "pydantic>=2.12.0",
+  "psycopg[binary]>=3.3.0",
+  "sqlalchemy>=2.0.45",
+  "uvicorn>=0.38.0",
+  "boto3>=1.35",
+  "google-cloud-secret-manager>=2.24",
+  "openai>=1.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=9.0.0",
+  "ruff>=0.14.0",
+  "semgrep>=1.145.0",
+  "tach>=0.30.0",
+  "ty>=0.0.1a22",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["backend/src"]
+addopts = ["--import-mode=importlib"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"backend/migrations/versions/*.py" = ["E501"]
+
+[tool.ty.src]
+include = ["backend/src"]

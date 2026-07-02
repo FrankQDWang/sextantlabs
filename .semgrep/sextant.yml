@@ -1,0 +1,46 @@
+rules:
+  - id: sextant.no-direct-canon-fact-write
+    languages: [python]
+    severity: ERROR
+    message: FactAssertionRecord cannot be created as canon directly; use the conflict policy promotion gate.
+    patterns:
+      - pattern: |
+          FactAssertionRecord(..., fact_status="canon", ...)
+
+  - id: sextant.no-graph-to-fact-write
+    languages: [python]
+    severity: ERROR
+    message: GraphProjection output must not create FactAssertionRecord objects.
+    patterns:
+      - pattern-inside: |
+          def $FUNC(...):
+            ...
+            GraphProjectionEdge(...)
+            ...
+      - pattern: |
+          FactAssertionRecord(...)
+
+  - id: sextant.no-provider-to-memory-write
+    languages: [python]
+    severity: ERROR
+    message: Provider adapters must return structured output only; they cannot create memory, review, or canon ORM records.
+    patterns:
+      - pattern-inside: |
+          class $PROVIDER(...):
+            ...
+      - metavariable-regex:
+          metavariable: $PROVIDER
+          regex: ".*Provider$"
+      - pattern-either:
+          - pattern: FactAssertionRecord(...)
+          - pattern: ReviewItemRecord(...)
+          - pattern: MemoryPage(...)
+          - pattern: SourceDeltaRecord(...)
+          - pattern: SourceSpan(...)
+          - pattern: EvidenceLogEntry(...)
+          - pattern: GraphProjectionRun(...)
+          - pattern: GraphProjectionEdge(...)
+          - pattern: StoryAliasRecord(...)
+          - pattern: StoryCanonicalEntity(...)
+          - pattern: StoryEventCandidate(...)
+          - pattern: StoryCanonicalEvent(...)

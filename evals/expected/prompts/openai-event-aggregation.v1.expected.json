@@ -1,0 +1,12 @@
+{
+  "failure_cases": [
+    "backend/tests/integration/test_source_pipeline_cleanup.py::test_aggregate_events_and_derive_facts_preserve_structured_candidate_flow"
+  ],
+  "golden_cases": [
+    "backend/tests/integration/test_event_aggregation_provider.py::test_openai_event_aggregation_provider_parses_structured_response",
+    "backend/tests/golden/test_provider_golden.py::test_local_event_aggregation_golden_uncertain_output"
+  ],
+  "prompt_hash": "ede234e96dd7fe17b93665938e573c9a0e3fc9aeae334bb2810af994f9a0c263",
+  "prompt_version": "openai-event-aggregation.v1",
+  "skill_name": "openai_event_aggregation"
+}

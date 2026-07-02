@@ -1,0 +1,7 @@
+* @frankqdwang
+
+backend/openapi.json @frankqdwang
+web/src/generated/sextant-api.ts @frankqdwang
+backend/scripts/generate_api_artifacts.py @frankqdwang
+backend/migrations/ @frankqdwang
+.semgrep/ @frankqdwang

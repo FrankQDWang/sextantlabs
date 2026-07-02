@@ -2,7 +2,29 @@
 
 Story Skills are deterministic, auditable processing protocols. LLM calls are adapters behind ports, not domain truth.
 
-## Skill Registry
+## Current Implementation Status
+
+As of 2026-07-01, Sextant has completed the local Story Skill architecture required by the repository contracts.
+
+Implemented pieces:
+
+- provider ports and adapters for StoryDraft, POV Detection, Memory Extraction, Event Aggregation, and Embedding;
+- prompt files under `prompts/skills/...`;
+- prompt metadata/hash locking through `prompt_registry.py`;
+- first-class `StorySkillRegistry` metadata for the production skill set;
+- implemented `run_skill(skill_name, skill_version, input_object, runtime_context) -> SkillRunResult`;
+- Resolver planning for ActionRequest flows and worker job steps;
+- executable skill document registry metadata with trigger/input/output/review/writeback/eval fields;
+- Codex subagent judge eval rubric (eval only; not production authority);
+- real-corpus chapter/slice boundary eval using the ignored local Fanren sample without committing source text;
+- RRF keyword+embedding fusion for context retrieval;
+- sliding-window automatic source/context organization for style memory and scene-local context;
+- `SkillRun` persistence and replay-diff evaluation;
+- worker job handlers for source, memory, review, context, graph, and agent work.
+
+Prompt registry is still not Skill Registry, and provider adapters are still not production authority. Remaining non-local completion is hosted: live provider proof refs, deployed smoke, clean-context UI acceptance, and other externally evidenced release gates.
+
+## Target Skill Registry
 
 First production set:
 
@@ -25,7 +47,7 @@ next-page-agent
 agent-review
 ```
 
-The old `build-next-page-context` name maps to `build-writing-context-pack`.
+The legacy `build-next-page-context` label maps to `build-writing-context-pack` for compatibility only; it is not a new skill name.
 
 ## Skill Document Contract
 
@@ -91,7 +113,31 @@ raw output
   -> proposed output
 ```
 
+The structured output boundary must not be implemented as a local prose cue parser. Natural-language cues may appear in provider prompts or eval examples, but production validators may only check structured schema, enum membership, SourceSpan ancestry, evidence boundaries, review policy, and writeback/canon policy.
+
 If schema validation fails, the skill may retry with bounded retry policy. Invalid output must not be partially applied.
+
+Implemented model-assisted POV detection uses the same boundary. The
+`PovDetectionProvider` returns `pov_character_name`, `pov_mode`, `confidence`,
+`evidence_span_ids`, and `uncertainty_reason` as structured output. Application
+validation requires a whitelisted POV mode, confidence in `0..1`, and evidence
+that includes the current `SourceSpan`. The provider may suggest only names
+from resolved character mentions supplied in the request; if the returned name
+does not match a resolved mention, the worker records an unknown POV judgment
+with uncertainty instead of creating a CanonicalEntity. POV provider output may
+write only `StoryScene` POV metadata after alias resolution and must not create
+facts, memory, reviews, canon, graph projections, or SourceDeltas.
+
+Implemented grouped memory writeback uses the same provider boundary. The
+`MemoryExtractionProvider` returns only structured proposed facts with
+`subject_ref`, `predicate`, `object_ref`, and a whitelisted `risk_level`.
+The worker validates the `MemoryExtractionResult`, ref shape, predicate, and
+risk level before any FactAssertion, EvidenceLogEntry, ReviewItem, MemoryPage,
+or GraphProjection side effect. Invalid provider output is recorded as a
+failed-terminal `SkillRun` and terminal worker failure. The production OpenAI
+adapter has no authority to create canon, memory pages, review items, graph
+state, or SourceDeltas; it only returns the structured schema consumed by the
+writeback policy.
 
 ## Prompt Versioning
 
@@ -121,6 +167,16 @@ Prompt changes require:
 3. audit of changed failure cases,
 4. CI golden test run.
 
+The current implementation stores OpenAI StoryDraft, POV Detection, Memory
+Extraction, and Event Aggregation prompts under `prompts/skills/...`. Each file
+has front matter for skill name/version, prompt version, input/output schema
+versions, model constraints, golden cases, and failure cases. The OpenAI
+provider adapters load their system prompt body through the prompt registry
+rather than embedding it in code. `backend/tests/contract/test_prompt_registry.py`
+locks prompt hashes under `evals/expected/prompts`, so prompt text or metadata
+changes fail the quick gate until the expected prompt lock and referenced
+golden/failure cases are updated.
+
 ## LLM Trust Boundary
 
 Allowed:
@@ -142,6 +198,12 @@ model creates GraphProjection canon edge
 model resolves ReviewItem without user/policy action
 model treats its previous output as evidence
 ```
+
+The implemented Semgrep provider-boundary guardrail fails provider classes that
+directly construct ORM artifacts for facts, review, memory pages, SourceDeltas,
+SourceSpans, EvidenceLogEntries, GraphProjection runs/edges, aliases, canonical
+entities, or canonical events. Provider adapters may return only structured
+outputs for application/worker validation.
 
 ## Skill-Specific Boundaries
 
@@ -255,7 +317,7 @@ Each golden case must include:
 
 LLM replay tests run against stored structured outputs, not live provider calls.
 
-Live provider tests are optional and never required for PR quick gate.
+Quick-gate replay tests use stored structured outputs. Production readiness still requires real provider E2E validation against fixed source slices, deterministic schema/evidence checks, and Codex subagent judge review with a structured eval rubric; the judge is not production authority. Provider output variability is acceptable only when the invariant checks and eval rubric reject unsupported claims, source-boundary drift, over-inference, missing evidence, and direct memory/canon writes.
 
 ## Audit Record
 

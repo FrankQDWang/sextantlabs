@@ -1,190 +1,210 @@
 # AGENTS.md
 
-本文件是给 Codex / AI coding agent 的仓库操作手册。它不替代产品设计文档，只定义：在这个仓库里如何读上下文、如何实施、如何验证、如何停止。
+This file is the operating manual for Codex / AI coding agents working in this repository. It defines how to read context, implement the system, verify work, and stop.
 
-## 1. 当前仓库状态
+It does not replace the product and engineering source documents. Repository files are the source of truth.
 
-Sextant 当前处在“宏观设计 → 工程实现 → web 工作台原型 → MVP”的过渡期。
+## 1. Current Repository State
 
-当前 open PR stack：
+Sextant is moving from design documents and a web workbench prototype toward complete production implementation.
 
-1. `docs/technical-implementation-design`：工程实现规格文档。
-2. `codex/web-workbench-on-implementation`：叠在上一个分支上的 `web/` 工作台原型。
+The repository now contains:
 
-修改放置规则：
+- `goals/`: Memory, Agent, and Storytelling Control domain design.
+- `experience/`: product experience contracts for writing sessions, candidates, memory writeback, review, and conversational entry.
+- `implementation/`: production engineering specifications.
+- `web/`: Vite + React writing workbench prototype that must be preserved visually while it becomes a real production client.
+- `PLAN.md`: complete production implementation plan.
 
-- 纯文档、Goal-ready 计划、验收标准、实施决策：放在 `docs/technical-implementation-design`。
-- 涉及 `web/` 的工程配置、测试、前端代码：放在 `codex/web-workbench-on-implementation`。
-- 不要为了实现功能而大改现有前端视觉审美。当前工作台 UI 的审美方向应被保留。
+Important rule: do not treat the existing workbench prototype or any historical local-only planning text as the implementation scope. The target is the full production system described by the documentation.
 
-## 2. Source-of-Truth 顺序
+## 2. Source-of-Truth Order
 
-发生冲突时，按以下顺序处理：
+When documents conflict, resolve in this order and record the decision:
 
-1. `goals/`：领域对象、Memory、Agent、Storytelling Control 的产品和领域逻辑。
-2. `experience/`：用户动作、写作会话、候选、回写、风险展示的产品契约。
-3. `implementation/`：工程实现边界、schema、API、测试、CI/CD、部署与运维。
-4. `PLAN.md`：当前 Codex Goal/MVP 的执行范围和验收标准。
-5. `web/`、未来 `backend/`：实现代码。
-6. `docs/progress-log.md`、`docs/known-gaps.md`：过程记录和剩余缺口。
+1. `GOAL.md`
+2. `AGENT_GOAL.md`
+3. `goals/*.md`
+4. `experience/*.md`
+5. `implementation/*.md`
+6. `PLAN.md`
+7. `web/` and future implementation code
+8. `docs/progress-log.md`, `docs/known-gaps.md`, `docs/implementation-decisions.md`
 
-`PLAN.md` 可以收窄实现范围，但不能改写上层契约。代码不能重新定义上层契约。
+`PLAN.md` is not allowed to reduce scope below the source documents. Its purpose is to force complete source coverage and production acceptance.
 
 ## 3. Repo Layout
 
-- `GOAL.md`：Sextant Memory 系统宏观目标。
-- `AGENT_GOAL.md`：Sextant 写作 Agent 宏观目标。
-- `goals/`：Memory、Agent、Storytelling Control 的领域设计。
-- `experience/`：产品体验契约。
-- `implementation/`：生产级工程实现规格。
-- `PLAN.md`：当前 local-first MVP 的可执行计划。
-- `docs/`：Goal readiness、实施决策、进度和缺口。
-- `web/`：Vite + React 写作工作台原型。该目录在 PR #8 中引入。
+```text
+GOAL.md             # Sextant Memory macro goal
+AGENT_GOAL.md       # Sextant Agent macro goal
+goals/              # Memory / Agent / Storytelling Control domain design
+experience/         # Product experience contracts
+implementation/     # Production engineering specifications
+PLAN.md             # Complete production implementation plan
+AGENTS.md           # Agent operating manual
+docs/               # Readiness review, progress, gaps, decisions
+web/                # Frontend workbench prototype and future production client
+```
 
-## 4. Working Directory 与包管理器
+## 4. Required Context Before Coding
 
-前端工作目录：
+Before implementation work starts, the agent must:
+
+1. read `AGENTS.md`;
+2. read `PLAN.md`;
+3. enumerate every Markdown file under the repository source directories;
+4. read all source Markdown files listed in `PLAN.md`;
+5. create or update a source coverage section in `docs/progress-log.md`;
+6. record conflicts or scope decisions in `docs/implementation-decisions.md`.
+
+Do not rely on only a subset of `goals/` or `implementation/`. Do not silently collapse multiple source requirements into a vague summary.
+
+## 5. Working Directory and Package Manager
+
+Frontend working directory:
 
 ```bash
 cd web
 ```
 
-前端包管理器：
+Frontend package manager:
 
 ```bash
 pnpm
 ```
 
-如果本地没有启用 Corepack：
+If Corepack is not enabled locally:
 
 ```bash
 corepack enable
 ```
 
-## 5. 常用命令
+## 6. Common Commands
 
-### 文档检查
+Documentation check:
 
 ```bash
-git diff --check -- AGENTS.md PLAN.md README.md docs implementation
-rg -n "TODO|TBD|[ \t]+$" AGENTS.md PLAN.md README.md docs implementation || true
+git diff --check -- AGENTS.md PLAN.md README.md docs experience goals implementation web
+rg -n "TODO|TBD|[ \t]+$" AGENTS.md PLAN.md README.md docs experience goals implementation web || true
 ```
 
-### 前端安装与运行
+Frontend install and run:
 
 ```bash
 pnpm --dir web install
 pnpm --dir web dev
 ```
 
-### 前端验证
+Frontend verification:
 
 ```bash
 pnpm --dir web lint
 pnpm --dir web typecheck
 pnpm --dir web build
-```
-
-如果后续添加 unit/e2e 测试，应补齐并使用：
-
-```bash
 pnpm --dir web test
 pnpm --dir web test:e2e
 ```
 
-## 6. Goal Mode 工作规则
+If backend, worker, migration, API generation, or security commands are added, document them in README and require them in final verification.
 
-长程 Goal 开始前必须先读：
+## 7. Implementation Rules
 
-1. `AGENTS.md`
-2. `PLAN.md`
-3. `GOAL.md`
-4. `AGENT_GOAL.md`
-5. `experience/README.md`
-6. `implementation/README.md`
-7. 与任务直接相关的 `goals/*`、`experience/*`、`implementation/*`
+- Implement the complete production system described by the source documents.
+- Do not create placeholder features that look complete.
+- Do not use frontend-only state to pretend domain behavior exists.
+- Do not let provider output directly write memory or canon.
+- Do not mark external integrations complete unless production configuration, validation, and failure behavior exist.
+- Only the LLM/provider boundary may use a deterministic local substitute.
+- Do not mock or fake any non-LLM subsystem for completion or acceptance.
+- If non-LLM credentials or hosted infrastructure are missing, implement the production interface and validation path, then record the exact blocker. Do not replace it with a local mock or adapter and mark it complete.
+- Preserve current web workbench visual direction unless a documented product contract requires a targeted UI change.
+- Update `docs/progress-log.md` after each checkpoint.
+- Update `docs/known-gaps.md` only for real non-blocking gaps or exact external blockers.
+- Update `docs/implementation-decisions.md` for architecture, schema, dependency, provider, persistence, security, or testing decisions.
 
-执行方式：
+## 8. Frontend Constraints
 
-- 先确认当前任务属于文档 PR 还是前端 PR。
-- 先做垂直切片，不要横向铺开大量未接通代码。
-- 每完成一个 checkpoint，更新 `docs/progress-log.md`。
-- 所有未完成但不阻塞 P0 的内容，写入 `docs/known-gaps.md`。
-- 如果发现上层契约冲突，不要静默选择；记录到 `docs/implementation-decisions.md`。
-- 如果 blocked，停止并报告：blocker、证据、尝试过的路径、继续所需输入。
+The current `web/` workbench visual direction is an asset. Do not broadly redesign:
 
-## 7. 前端实现约束
+- layout density;
+- type hierarchy;
+- quiet writing-workbench character;
+- Candidate Drawer, Memory Writeback, Scene Card visual language;
+- Chinese copy style.
 
-现有 `web/` 工作台 UI 审美方向是可保留资产。除非用户明确要求，不要大改：
+Allowed frontend changes:
 
-- 整体布局密度；
-- 字体层级；
-- 克制、安静的写作工作台气质；
-- Candidate Drawer、Memory Writeback、Scene Card 的视觉语言；
-- 中文文案风格。
+- connect UI to real domain/API state;
+- add production client behavior;
+- add stable test selectors;
+- add accessibility and responsive fixes;
+- remove, disable, or implement unfinished actions;
+- fix lint, typecheck, build, and test issues.
 
-允许的前端改动：
+## 9. Domain Boundary
 
-- 把 demo state 移入 domain/store 层；
-- 增加 local-first persistence；
-- 增加测试所需的稳定 selector；
-- 隐藏、禁用或标记尚未实现的 P1 按钮；
-- 修复 lint/typecheck/build 问题；
-- 改善可访问性和响应式，但不得重做视觉风格。
-
-## 8. Domain Boundary
-
-实现时必须保留以下链条，不能走捷径：
+The implementation must preserve the full evidence chain:
 
 ```text
 DraftCandidate
   -> AcceptedFragment
   -> SourceDelta
   -> SourceSpan
+  -> EvidenceLogEntry
   -> MemoryWritebackPreview
   -> ProposedMemory / ReviewItem
-  -> MemoryPage / Review Queue
+  -> MemoryPage / CanonPromotion
+  -> GraphProjection
 ```
 
-禁止：
+Forbidden:
 
 ```text
 DraftCandidate -> MemoryPage
 DraftCandidate -> Current Canon
 AgentReviewFinding -> ReviewItem without SourceSpan
-模型推断 -> CanonFact without evidence
+model output -> CanonFact without evidence and review policy
+GraphProjection -> FactAssertion
 ```
 
-## 9. Dependency Policy
+## 10. Dependency Policy
 
-- 默认不添加生产依赖。
-- 添加依赖前必须说明原因，并记录到 `docs/implementation-decisions.md`。
-- 测试依赖可以加入，但要同步更新 package lock 和 README。
-- 不提交真实 secret、API key、用户私有文本或生产凭据。
-- P0 默认使用 mock provider，不依赖真实 LLM。
+- Production dependencies require a reason and an entry in `docs/implementation-decisions.md`.
+- Test dependencies are allowed when they support required acceptance coverage.
+- Do not commit real secrets, API keys, user-private text, or production credentials.
+- Local adapters are allowed for tests; they must not be represented as final production integrations.
 
-## 10. Definition of Done
+## 11. Definition of Done
 
-一个 Goal/MVP 实现任务完成必须满足：
+A production implementation goal is complete only when:
 
-- P0 acceptance criteria in `PLAN.md` 全部完成，或剩余项有明确 blocker 证据。
-- 文档和代码没有重新定义上层契约。
-- 前端视觉审美没有被无关重写。
-- `pnpm --dir web lint` 通过。
-- `pnpm --dir web typecheck` 通过。
-- `pnpm --dir web build` 通过。
-- 如果已添加测试：`pnpm --dir web test`、`pnpm --dir web test:e2e` 通过。
-- `docs/progress-log.md` 有最终记录。
-- `docs/known-gaps.md` 列出非阻塞缺口。
+- every source Markdown file has a coverage record;
+- every source requirement is implemented or blocked with exact evidence;
+- source documents, code, tests, and README agree;
+- `implementation/13-acceptance-matrix.md` acceptance is satisfied;
+- frontend, backend, worker, migration, API, security, and smoke verification commands pass;
+- clean-context human UI acceptance passes through browser/computer-use only;
+- `docs/progress-log.md`, `docs/known-gaps.md`, and `docs/implementation-decisions.md` are current.
 
-## 11. Recommended Goal Prompt
+## 12. Recommended Goal Prompt
 
 ```text
-/goal Implement the P0 MVP described in PLAN.md.
+/goal Implement the complete production-ready Sextant system described by the repository documentation.
 
-Read AGENTS.md first. Treat GOAL.md, AGENT_GOAL.md, goals/, experience/, and implementation/ as source material, but use PLAN.md as the implementation scope for this run.
+Read AGENTS.md first. Then read PLAN.md and enumerate every Markdown file under GOAL.md, AGENT_GOAL.md, goals/, experience/, implementation/, docs/, README.md, and web/README.md.
 
-Preserve the current web workbench visual direction. Do not redesign the UI. Build a local-first, mock-provider MVP that makes the existing writing workflow real: selection -> candidate -> accepted fragment -> source delta -> source span -> memory writeback preview -> review queue.
+Before coding, create a source coverage section in docs/progress-log.md listing every source Markdown file and the implementation obligations derived from it. Do not omit, collapse, or simplify requirements silently.
 
-Update docs/progress-log.md after each checkpoint and docs/known-gaps.md for non-blocking gaps. Stop only when P0 acceptance criteria and verification commands pass, or when blocked with exact evidence.
+Build the complete production implementation, not a demo. No placeholder features, no fake UI-only success states, no hardcoded product flow pretending to be real behavior, and no mock-only final implementation.
+
+Preserve the current web workbench visual direction. Do not redesign the UI unless a documented product contract requires a targeted change.
+
+Only the LLM/provider boundary may use a deterministic local substitute. Do not mock or fake any other subsystem for completion or acceptance. If non-LLM credentials, hosted infrastructure, or third-party access are unavailable, implement the production interface, configuration contract, and validation path, then record the exact blocker in docs/known-gaps.md. Do not mark that feature complete.
+
+Use subagents where helpful for source coverage, architecture review, backend/domain review, frontend UI preservation review, security review, and clean-context human acceptance.
+
+Final clean-context acceptance must use only the running UI through browser/computer-use. The reviewer must not inspect source code or docs. They must verify the complete user-facing workflow and report exact pass/fail evidence.
+
+Stop only when every source document requirement is implemented or explicitly blocked with evidence, all production acceptance criteria pass, and code, tests, and docs are aligned.
 ```

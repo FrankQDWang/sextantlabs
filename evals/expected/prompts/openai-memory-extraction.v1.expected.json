@@ -1,0 +1,12 @@
+{
+  "failure_cases": [
+    "backend/tests/integration/test_memory_extraction_provider.py::test_memory_writeback_rejects_invalid_provider_output_without_fact_side_effects"
+  ],
+  "golden_cases": [
+    "backend/tests/integration/test_memory_extraction_provider.py::test_openai_memory_extraction_provider_parses_structured_response",
+    "backend/tests/golden/test_provider_golden.py::test_local_memory_extraction_golden_output"
+  ],
+  "prompt_hash": "f14d85ff23d79f119eb55dae6385bb7614deed2c60242af5f56b3a839fc6e74a",
+  "prompt_version": "openai-memory-extraction.v1",
+  "skill_name": "openai_memory_extraction"
+}

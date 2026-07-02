@@ -9,7 +9,7 @@ const states: { id: DemoState; label: string }[] = [
   { id: "d", label: "候选抽屉" },
   { id: "e", label: "局部采纳" },
   { id: "f", label: "记忆回写" },
-  { id: "g", label: "Review" },
+  { id: "g", label: "复核" },
 ]
 
 interface StateSwitcherProps {
