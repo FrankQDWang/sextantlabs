@@ -789,7 +789,7 @@ Completed against hosted production services:
 - verified `https://api.sextantlabs.net/health`, `/observability/traces`, and `/observability/alerts` returned HTTP `200` after deployment;
 - generated a real API trace sample with a Supabase Auth JWT by calling `GET /api/projects/{project_id}/context-pack-readiness` against smoke project `fc5d58ab-80bd-4761-adef-3593cc98c756`, which returned HTTP `200`;
 - switched `/etc/sextant/sextant.env` on the VPS to `SEXTANT_LLM_API_KEY_SECRET_REF=supabase-vault://...`, removed direct `OPENAI_API_KEY` / `SEXTANT_OPENAI_API_KEY` entries, and restarted API/worker;
-- captured sanitized KiwiVM runtime evidence: `direct_openai_key_count=0`, `secret_ref_scheme=supabase-vault`, `secret_ref_sha256=24ced8b21acad2d6519d24293bb244c396b503a7a996690bd9a9fe1827496c01`, `api_active=active`, and `worker_active=active`.
+- captured sanitized KiwiVM runtime evidence: `direct_openai_key_count=0`, `secret_ref_scheme=supabase-vault`, `secret_ref_fingerprint=24ced8b21aca...7496c01`, `api_active=active`, and `worker_active=active`.
 
 Passed in the live working tree:
 
