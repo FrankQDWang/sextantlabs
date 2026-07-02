@@ -116,6 +116,17 @@ def test_hosted_secret_manager_probe_accepts_supabase_vault_ref_without_exposing
     assert "sextant_openai_api_key" not in encoded
 
 
+def test_hosted_secret_manager_probe_cli_evidence_is_constant_redacted() -> None:
+    probe = _load_probe_module()
+
+    evidence = json.loads(probe.render_secret_manager_probe_cli_evidence())
+
+    assert evidence == {
+        "secret_manager_access": "verified",
+        "status": "pass",
+    }
+
+
 def test_hosted_secret_manager_check_config_cli() -> None:
     valid = subprocess.run(
         ["uv", "run", "python", str(SCRIPT_PATH), "--check-config"],
